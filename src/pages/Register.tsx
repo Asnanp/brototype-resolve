@@ -1,10 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Shield, Mail, Lock, User, ArrowRight, UserCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Shield, Mail, Lock, User, ArrowRight, Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { z } from "zod";
+
+const registerSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -12,24 +23,56 @@ const Register = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    role: "student"
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { signUp, user, role, loading } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!loading && user && role) {
+      if (role === "admin") {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
+    }
+  }, [user, role, loading, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords do not match");
+    // Validate input
+    const result = registerSchema.safeParse(formData);
+    if (!result.success) {
+      toast.error(result.error.errors[0].message);
       return;
     }
 
-    if (formData.password.length < 8) {
-      toast.error("Password must be at least 8 characters long");
-      return;
+    setIsLoading(true);
+    const { error } = await signUp(formData.email, formData.password, formData.name, "student");
+    
+    if (error) {
+      if (error.message.includes("User already registered")) {
+        toast.error("An account with this email already exists. Please sign in instead.");
+      } else {
+        toast.error(error.message);
+      }
+      setIsLoading(false);
+    } else {
+      toast.success("Account created successfully! Welcome to Brototype CMS.");
     }
-
-    toast.info("Authentication will be implemented once backend is set up");
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center py-12">
@@ -67,6 +110,7 @@ const Register = () => {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
+                  disabled={isLoading}
                   className="glass border-border/50 h-11"
                 />
               </div>
@@ -83,28 +127,9 @@ const Register = () => {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
+                  disabled={isLoading}
                   className="glass border-border/50 h-11"
                 />
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="role" className="text-sm font-medium flex items-center gap-2">
-                  <UserCircle className="w-4 h-4" />
-                  Select Role
-                </label>
-                <Select
-                  value={formData.role}
-                  onValueChange={(value) => setFormData({ ...formData, role: value })}
-                >
-                  <SelectTrigger className="glass border-border/50 h-11">
-                    <SelectValue placeholder="Choose your role" />
-                  </SelectTrigger>
-                  <SelectContent className="glass-strong border-border/50">
-                    <SelectItem value="student">Student</SelectItem>
-                    <SelectItem value="staff">Staff Member</SelectItem>
-                    <SelectItem value="admin">Administrator</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
 
               <div className="space-y-2">
@@ -112,15 +137,26 @@ const Register = () => {
                   <Lock className="w-4 h-4" />
                   Password
                 </label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  required
-                  className="glass border-border/50 h-11"
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    required
+                    disabled={isLoading}
+                    className="glass border-border/50 h-11 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground">Must be at least 8 characters</p>
               </div>
 
               <div className="space-y-2">
@@ -128,24 +164,44 @@ const Register = () => {
                   <Lock className="w-4 h-4" />
                   Confirm Password
                 </label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  required
-                  className="glass border-border/50 h-11"
-                />
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    required
+                    disabled={isLoading}
+                    className="glass border-border/50 h-11 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               <Button
                 type="submit"
                 size="lg"
+                disabled={isLoading}
                 className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 glow"
               >
-                Create Account
-                <ArrowRight className="ml-2 w-4 h-4" />
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                    Creating Account...
+                  </>
+                ) : (
+                  <>
+                    Create Account
+                    <ArrowRight className="ml-2 w-4 h-4" />
+                  </>
+                )}
               </Button>
             </form>
 

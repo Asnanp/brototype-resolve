@@ -1,20 +1,76 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Shield, Mail, Lock, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Shield, Mail, Lock, ArrowRight, Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { z } from "zod";
+
+const loginSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { signIn, user, role, loading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!loading && user && role) {
+      const from = (location.state as any)?.from?.pathname;
+      if (from) {
+        navigate(from, { replace: true });
+      } else if (role === "admin") {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
+    }
+  }, [user, role, loading, navigate, location]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.info("Authentication will be implemented once backend is set up");
+    
+    // Validate input
+    const result = loginSchema.safeParse({ email, password });
+    if (!result.success) {
+      toast.error(result.error.errors[0].message);
+      return;
+    }
+
+    setIsLoading(true);
+    const { error } = await signIn(email, password);
+    
+    if (error) {
+      if (error.message.includes("Invalid login credentials")) {
+        toast.error("Invalid email or password. Please try again.");
+      } else if (error.message.includes("Email not confirmed")) {
+        toast.error("Please verify your email address before signing in.");
+      } else {
+        toast.error(error.message);
+      }
+      setIsLoading(false);
+    } else {
+      toast.success("Welcome back!");
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center">
@@ -40,16 +96,6 @@ const Login = () => {
               <p className="text-muted-foreground">Sign in to access your dashboard</p>
             </div>
 
-            {/* Demo Credentials */}
-            <div className="glass p-4 rounded-xl mb-6 border border-primary/20">
-              <p className="text-sm font-semibold text-primary mb-2">Demo Credentials:</p>
-              <div className="space-y-1 text-sm text-muted-foreground">
-                <p><strong>Student:</strong> student@brototype.com / password123</p>
-                <p><strong>Staff:</strong> staff@brototype.com / password123</p>
-                <p><strong>Admin:</strong> admin@brototype.com / password123</p>
-              </div>
-            </div>
-
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
                 <label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
@@ -63,6 +109,7 @@ const Login = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  disabled={isLoading}
                   className="glass border-border/50 h-11"
                 />
               </div>
@@ -72,15 +119,25 @@ const Login = () => {
                   <Lock className="w-4 h-4" />
                   Password
                 </label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="glass border-border/50 h-11"
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    className="glass border-border/50 h-11 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center justify-between">
@@ -89,23 +146,34 @@ const Login = () => {
                     id="remember"
                     checked={rememberMe}
                     onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                    disabled={isLoading}
                   />
                   <label htmlFor="remember" className="text-sm cursor-pointer">
                     Remember me
                   </label>
                 </div>
-                <a href="#" className="text-sm text-primary hover:underline">
+                <Link to="/forgot-password" className="text-sm text-primary hover:underline">
                   Forgot password?
-                </a>
+                </Link>
               </div>
 
               <Button
                 type="submit"
                 size="lg"
+                disabled={isLoading}
                 className="w-full bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 glow"
               >
-                Sign In
-                <ArrowRight className="ml-2 w-4 h-4" />
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  <>
+                    Sign In
+                    <ArrowRight className="ml-2 w-4 h-4" />
+                  </>
+                )}
               </Button>
             </form>
 
