@@ -19,6 +19,15 @@ import NewComplaint from "./pages/dashboard/NewComplaint";
 import ComplaintDetail from "./pages/dashboard/ComplaintDetail";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AllComplaints from "./pages/admin/AllComplaints";
+import UserManagement from "./pages/admin/UserManagement";
+import Analytics from "./pages/admin/Analytics";
+import CategoryManagement from "./pages/admin/CategoryManagement";
+import TagManagement from "./pages/admin/TagManagement";
+import CannedResponses from "./pages/admin/CannedResponses";
+import KnowledgeBase from "./pages/admin/KnowledgeBase";
+import Announcements from "./pages/admin/Announcements";
+import FAQManagement from "./pages/admin/FAQManagement";
+import Settings from "./pages/admin/Settings";
 
 const queryClient = new QueryClient();
 
@@ -39,45 +48,26 @@ const App = () => (
             <Route path="/register" element={<Register />} />
             
             {/* Student Dashboard Routes */}
-            <Route path="/dashboard" element={
-              <ProtectedRoute requiredRole="student">
-                <StudentDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/dashboard/complaints" element={
-              <ProtectedRoute requiredRole="student">
-                <MyComplaints />
-              </ProtectedRoute>
-            } />
-            <Route path="/dashboard/complaints/new" element={
-              <ProtectedRoute requiredRole="student">
-                <NewComplaint />
-              </ProtectedRoute>
-            } />
-            <Route path="/dashboard/complaints/:id" element={
-              <ProtectedRoute>
-                <ComplaintDetail />
-              </ProtectedRoute>
-            } />
+            <Route path="/dashboard" element={<ProtectedRoute requiredRole="student"><StudentDashboard /></ProtectedRoute>} />
+            <Route path="/dashboard/complaints" element={<ProtectedRoute requiredRole="student"><MyComplaints /></ProtectedRoute>} />
+            <Route path="/dashboard/complaints/new" element={<ProtectedRoute requiredRole="student"><NewComplaint /></ProtectedRoute>} />
+            <Route path="/dashboard/complaints/:id" element={<ProtectedRoute><ComplaintDetail /></ProtectedRoute>} />
+            <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             
             {/* Admin Dashboard Routes */}
-            <Route path="/admin" element={
-              <ProtectedRoute requiredRole="admin">
-                <AdminDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/complaints" element={
-              <ProtectedRoute requiredRole="admin">
-                <AllComplaints />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/complaints/:id" element={
-              <ProtectedRoute requiredRole="admin">
-                <ComplaintDetail />
-              </ProtectedRoute>
-            } />
+            <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/complaints" element={<ProtectedRoute requiredRole="admin"><AllComplaints /></ProtectedRoute>} />
+            <Route path="/admin/complaints/:id" element={<ProtectedRoute requiredRole="admin"><ComplaintDetail /></ProtectedRoute>} />
+            <Route path="/admin/users" element={<ProtectedRoute requiredRole="admin"><UserManagement /></ProtectedRoute>} />
+            <Route path="/admin/analytics" element={<ProtectedRoute requiredRole="admin"><Analytics /></ProtectedRoute>} />
+            <Route path="/admin/categories" element={<ProtectedRoute requiredRole="admin"><CategoryManagement /></ProtectedRoute>} />
+            <Route path="/admin/tags" element={<ProtectedRoute requiredRole="admin"><TagManagement /></ProtectedRoute>} />
+            <Route path="/admin/responses" element={<ProtectedRoute requiredRole="admin"><CannedResponses /></ProtectedRoute>} />
+            <Route path="/admin/knowledge" element={<ProtectedRoute requiredRole="admin"><KnowledgeBase /></ProtectedRoute>} />
+            <Route path="/admin/announcements" element={<ProtectedRoute requiredRole="admin"><Announcements /></ProtectedRoute>} />
+            <Route path="/admin/faqs" element={<ProtectedRoute requiredRole="admin"><FAQManagement /></ProtectedRoute>} />
+            <Route path="/admin/settings" element={<ProtectedRoute requiredRole="admin"><Settings /></ProtectedRoute>} />
             
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
