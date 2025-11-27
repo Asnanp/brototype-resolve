@@ -28,9 +28,11 @@ import KnowledgeBaseAdmin from "./pages/admin/KnowledgeBase";
 import Announcements from "./pages/admin/Announcements";
 import FAQManagement from "./pages/admin/FAQManagement";
 import Settings from "./pages/admin/Settings";
+import ComplaintsWithBulkActions from "./pages/admin/ComplaintsWithBulkActions";
 import Notifications from "./pages/dashboard/Notifications";
 import KnowledgeBase from "./pages/dashboard/KnowledgeBase";
 import FAQs from "./pages/dashboard/FAQs";
+import EmailPreferences from "./pages/dashboard/EmailPreferences";
 
 const queryClient = new QueryClient();
 
@@ -58,11 +60,12 @@ const App = () => (
             <Route path="/dashboard/notifications" element={<ProtectedRoute requiredRole="student"><Notifications /></ProtectedRoute>} />
             <Route path="/dashboard/knowledge" element={<ProtectedRoute requiredRole="student"><KnowledgeBase /></ProtectedRoute>} />
             <Route path="/dashboard/faqs" element={<ProtectedRoute requiredRole="student"><FAQs /></ProtectedRoute>} />
+            <Route path="/dashboard/email-preferences" element={<ProtectedRoute requiredRole="student"><EmailPreferences /></ProtectedRoute>} />
             <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             
             {/* Admin Dashboard Routes */}
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
-            <Route path="/admin/complaints" element={<ProtectedRoute requiredRole="admin"><AllComplaints /></ProtectedRoute>} />
+            <Route path="/admin/complaints" element={<ProtectedRoute requiredRole="admin"><ComplaintsWithBulkActions /></ProtectedRoute>} />
             <Route path="/admin/complaints/:id" element={<ProtectedRoute requiredRole="admin"><ComplaintDetail /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute requiredRole="admin"><UserManagement /></ProtectedRoute>} />
             <Route path="/admin/analytics" element={<ProtectedRoute requiredRole="admin"><Analytics /></ProtectedRoute>} />
