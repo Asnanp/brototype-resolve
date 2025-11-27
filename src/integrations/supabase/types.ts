@@ -305,6 +305,7 @@ export type Database = {
           created_at: string
           description: string
           feedback: string | null
+          first_response_at: string | null
           id: string
           is_anonymous: boolean | null
           is_public: boolean | null
@@ -312,6 +313,8 @@ export type Database = {
           resolution_notes: string | null
           resolved_at: string | null
           satisfaction_rating: number | null
+          sla_breach_at: string | null
+          sla_status: string | null
           status: Database["public"]["Enums"]["complaint_status"]
           student_id: string
           ticket_number: string
@@ -326,6 +329,7 @@ export type Database = {
           created_at?: string
           description: string
           feedback?: string | null
+          first_response_at?: string | null
           id?: string
           is_anonymous?: boolean | null
           is_public?: boolean | null
@@ -333,6 +337,8 @@ export type Database = {
           resolution_notes?: string | null
           resolved_at?: string | null
           satisfaction_rating?: number | null
+          sla_breach_at?: string | null
+          sla_status?: string | null
           status?: Database["public"]["Enums"]["complaint_status"]
           student_id: string
           ticket_number: string
@@ -347,6 +353,7 @@ export type Database = {
           created_at?: string
           description?: string
           feedback?: string | null
+          first_response_at?: string | null
           id?: string
           is_anonymous?: boolean | null
           is_public?: boolean | null
@@ -354,6 +361,8 @@ export type Database = {
           resolution_notes?: string | null
           resolved_at?: string | null
           satisfaction_rating?: number | null
+          sla_breach_at?: string | null
+          sla_status?: string | null
           status?: Database["public"]["Enums"]["complaint_status"]
           student_id?: string
           ticket_number?: string
@@ -369,6 +378,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      email_preferences: {
+        Row: {
+          created_at: string | null
+          id: string
+          notify_assignment: boolean | null
+          notify_new_comment: boolean | null
+          notify_sla_warning: boolean | null
+          notify_status_change: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          notify_assignment?: boolean | null
+          notify_new_comment?: boolean | null
+          notify_sla_warning?: boolean | null
+          notify_status_change?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          notify_assignment?: boolean | null
+          notify_new_comment?: boolean | null
+          notify_sla_warning?: boolean | null
+          notify_status_change?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       escalations: {
         Row: {
@@ -575,6 +617,36 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_filters: {
+        Row: {
+          created_at: string | null
+          filter_data: Json
+          id: string
+          is_default: boolean | null
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          filter_data: Json
+          id?: string
+          is_default?: boolean | null
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          filter_data?: Json
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       sla_policies: {
         Row: {
           created_at: string
@@ -706,6 +778,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_sla_breach_time: {
+        Args: {
+          p_created_at: string
+          p_priority: Database["public"]["Enums"]["priority_level"]
+        }
+        Returns: string
+      }
       generate_ticket_number: { Args: never; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
@@ -718,6 +797,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      update_sla_status: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "student" | "admin"
