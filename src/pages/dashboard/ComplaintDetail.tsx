@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
+import { FileUpload } from "@/components/FileUpload";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +24,8 @@ import {
   AlertCircle,
   CheckCircle2,
   Star,
+  Paperclip,
+  Download,
 } from "lucide-react";
 
 interface Comment {
@@ -51,6 +54,14 @@ interface Complaint {
   satisfaction_rating: number | null;
   category: { name: string; color: string } | null;
   profiles: { full_name: string; email: string } | null;
+}
+
+interface Attachment {
+  id: string;
+  file_name: string;
+  file_url: string;
+  file_size: number;
+  created_at: string;
 }
 
 const statusColors: Record<string, string> = {
@@ -83,16 +94,19 @@ export default function ComplaintDetail() {
   const { user, role } = useAuth();
   const [complaint, setComplaint] = useState<Complaint | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [rating, setRating] = useState(0);
   const [showRating, setShowRating] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
 
   useEffect(() => {
     if (id) {
       fetchComplaint();
       fetchComments();
+      fetchAttachments();
     }
   }, [id]);
 
@@ -138,6 +152,43 @@ export default function ComplaintDetail() {
       setComments((data || []) as any);
     } catch (error) {
       console.error("Error fetching comments:", error);
+    }
+  };
+
+  const fetchAttachments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("attachments")
+        .select("*")
+        .eq("complaint_id", id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setAttachments(data || []);
+    } catch (error) {
+      console.error("Error fetching attachments:", error);
+    }
+  };
+
+  const downloadAttachment = async (attachment: Attachment) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('complaint-attachments')
+        .download(attachment.file_url);
+
+      if (error) throw error;
+
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = attachment.file_name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Failed to download file');
     }
   };
 
@@ -317,6 +368,75 @@ export default function ComplaintDetail() {
             </CardContent>
           </Card>
         )}
+
+        {/* Attachments Section */}
+        <Card className="glass-strong border-border/50">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Paperclip className="w-5 h-5 text-primary" />
+                Attachments ({attachments.length})
+              </CardTitle>
+              {!showUpload && complaint.status !== 'closed' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowUpload(!showUpload)}
+                >
+                  <Paperclip className="w-4 h-4 mr-2" />
+                  Add Files
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {showUpload && (
+              <div className="pb-4 border-b border-border/50">
+                <FileUpload
+                  complaintId={id!}
+                  onUploadComplete={() => {
+                    fetchAttachments();
+                    setShowUpload(false);
+                  }}
+                />
+              </div>
+            )}
+
+            {attachments.length === 0 && !showUpload ? (
+              <div className="text-center py-8">
+                <Paperclip className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
+                <p className="text-muted-foreground">No attachments yet</p>
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                {attachments.map((attachment) => (
+                  <div
+                    key={attachment.id}
+                    className="flex items-center justify-between p-4 rounded-xl glass hover:bg-secondary/20 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Paperclip className="w-5 h-5 text-primary" />
+                      <div>
+                        <p className="font-medium text-sm">{attachment.file_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(attachment.created_at).toLocaleDateString()} •{" "}
+                          {(attachment.file_size / 1024).toFixed(2)} KB
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => downloadAttachment(attachment)}
+                    >
+                      <Download className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Comments Section */}
         <Card className="glass-strong border-border/50">
