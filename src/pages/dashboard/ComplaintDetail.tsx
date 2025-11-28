@@ -116,14 +116,26 @@ export default function ComplaintDetail() {
         .from("complaints")
         .select(`
           *,
-          category:categories(name, color),
-          profiles!complaints_student_id_fkey(full_name, email)
+          category:categories(name, color)
         `)
         .eq("id", id)
         .single();
 
       if (error) throw error;
-      setComplaint(data as any);
+
+      // Fetch student profile separately
+      let complaintData: any = data;
+      if (data.student_id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name, email")
+          .eq("user_id", data.student_id)
+          .single();
+
+        complaintData = { ...data, profiles: profile };
+      }
+
+      setComplaint(complaintData as any);
       
       // Show rating form if resolved and no rating yet
       if (data.status === "resolved" && !data.satisfaction_rating && data.student_id === user?.id) {
@@ -141,15 +153,29 @@ export default function ComplaintDetail() {
     try {
       const { data, error } = await supabase
         .from("comments")
-        .select(`
-          *,
-          profiles!comments_user_id_fkey(full_name, email)
-        `)
+        .select("*")
         .eq("complaint_id", id)
         .order("created_at", { ascending: true });
 
       if (error) throw error;
-      setComments((data || []) as any);
+
+      // Fetch user profiles separately
+      const userIds = [...new Set(data?.map(c => c.user_id).filter(Boolean))];
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, full_name, email")
+          .in("user_id", userIds);
+
+        const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+        const enrichedComments = data?.map(comment => ({
+          ...comment,
+          profiles: profileMap.get(comment.user_id)
+        }));
+        setComments((enrichedComments || []) as any);
+      } else {
+        setComments((data || []) as any);
+      }
     } catch (error) {
       console.error("Error fetching comments:", error);
     }
