@@ -23,6 +23,9 @@ import UserManagement from "./pages/admin/UserManagement";
 import Analytics from "./pages/admin/Analytics";
 import AutomationRules from "./pages/admin/AutomationRules";
 import ComplaintWidget from "./pages/ComplaintWidget";
+import ActivityFeed from "./pages/admin/ActivityFeed";
+import ComplaintTemplates from "./pages/admin/ComplaintTemplates";
+import PollManagement from "./pages/admin/PollManagement";
 import CategoryManagement from "./pages/admin/CategoryManagement";
 import TagManagement from "./pages/admin/TagManagement";
 import CannedResponses from "./pages/admin/CannedResponses";
@@ -34,6 +37,7 @@ import ComplaintsWithBulkActions from "./pages/admin/ComplaintsWithBulkActions";
 import Notifications from "./pages/dashboard/Notifications";
 import KnowledgeBase from "./pages/dashboard/KnowledgeBase";
 import FAQs from "./pages/dashboard/FAQs";
+import Polls from "./pages/dashboard/Polls";
 import EmailPreferences from "./pages/dashboard/EmailPreferences";
 
 const queryClient = new QueryClient();
@@ -64,6 +68,7 @@ const App = () => (
             <Route path="/dashboard/notifications" element={<ProtectedRoute requiredRole="student"><Notifications /></ProtectedRoute>} />
             <Route path="/dashboard/knowledge" element={<ProtectedRoute requiredRole="student"><KnowledgeBase /></ProtectedRoute>} />
             <Route path="/dashboard/faqs" element={<ProtectedRoute requiredRole="student"><FAQs /></ProtectedRoute>} />
+            <Route path="/dashboard/polls" element={<ProtectedRoute requiredRole="student"><Polls /></ProtectedRoute>} />
             <Route path="/dashboard/email-preferences" element={<ProtectedRoute requiredRole="student"><EmailPreferences /></ProtectedRoute>} />
             <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             
@@ -74,6 +79,9 @@ const App = () => (
             <Route path="/admin/users" element={<ProtectedRoute requiredRole="admin"><UserManagement /></ProtectedRoute>} />
             <Route path="/admin/analytics" element={<ProtectedRoute requiredRole="admin"><Analytics /></ProtectedRoute>} />
             <Route path="/admin/automation" element={<ProtectedRoute requiredRole="admin"><AutomationRules /></ProtectedRoute>} />
+            <Route path="/admin/activity" element={<ProtectedRoute requiredRole="admin"><ActivityFeed /></ProtectedRoute>} />
+            <Route path="/admin/templates" element={<ProtectedRoute requiredRole="admin"><ComplaintTemplates /></ProtectedRoute>} />
+            <Route path="/admin/polls" element={<ProtectedRoute requiredRole="admin"><PollManagement /></ProtectedRoute>} />
             <Route path="/admin/categories" element={<ProtectedRoute requiredRole="admin"><CategoryManagement /></ProtectedRoute>} />
             <Route path="/admin/tags" element={<ProtectedRoute requiredRole="admin"><TagManagement /></ProtectedRoute>} />
             <Route path="/admin/responses" element={<ProtectedRoute requiredRole="admin"><CannedResponses /></ProtectedRoute>} />
