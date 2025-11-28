@@ -1,61 +1,56 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  BarChart3,
-  TrendingUp,
-  TrendingDown,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  PieChart,
-  Activity,
-  Loader2,
-  Calendar,
-} from "lucide-react";
-import {
   BarChart,
   Bar,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
-  PieChart as RechartsPieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
   Legend,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
 } from "recharts";
+import { Loader2, TrendingUp, Clock, CheckCircle2, AlertCircle, BarChart3 } from "lucide-react";
 
 interface AnalyticsData {
   totalComplaints: number;
   resolvedComplaints: number;
-  avgResolutionTime: number;
-  complaintsByStatus: { name: string; value: number; color: string }[];
-  complaintsByPriority: { name: string; value: number; color: string }[];
-  complaintsByCategory: { name: string; count: number }[];
-  weeklyTrend: { day: string; complaints: number; resolved: number }[];
-  resolutionRate: number;
   pendingComplaints: number;
+  avgResolutionTime: number;
+  avgFirstResponseTime: number;
+  resolutionRate: number;
+  slaCompliance: number;
+  complaintsByStatus: { name: string; value: number }[];
+  complaintsByPriority: { name: string; value: number }[];
+  complaintsByCategory: { name: string; value: number }[];
+  weeklyTrend: { week: string; created: number; resolved: number }[];
+  responseTimeTrend: { date: string; avgTime: number }[];
+  slaPerformance: { month: string; met: number; breached: number; atRisk: number }[];
 }
 
 const statusColors: Record<string, string> = {
-  open: "#3B82F6",
-  in_progress: "#F59E0B",
-  under_review: "#8B5CF6",
-  resolved: "#10B981",
-  closed: "#6B7280",
-  rejected: "#EF4444",
+  Open: "#3b82f6",
+  "In progress": "#f59e0b",
+  "Under review": "#8b5cf6",
+  Resolved: "#10b981",
+  Closed: "#6b7280",
+  Rejected: "#ef4444",
 };
 
 const priorityColors: Record<string, string> = {
-  low: "#10B981",
-  medium: "#F59E0B",
-  high: "#F97316",
-  urgent: "#EF4444",
+  Low: "#10b981",
+  Medium: "#f59e0b",
+  High: "#f97316",
+  Urgent: "#ef4444",
 };
 
 export default function Analytics() {
@@ -64,110 +59,199 @@ export default function Analytics() {
 
   useEffect(() => {
     fetchAnalytics();
+    
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('analytics-updates')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'complaints' }, () => {
+        fetchAnalytics();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchAnalytics = async () => {
     try {
-      // Fetch all complaints
-      const { data: complaints } = await supabase
+      const { data: complaints, error } = await supabase
         .from("complaints")
-        .select("*, category:categories(name)");
+        .select(`
+          *,
+          categories (name)
+        `);
 
-      if (!complaints) return;
+      if (error) throw error;
 
-      // Calculate stats
-      const totalComplaints = complaints.length;
-      const resolvedComplaints = complaints.filter(c => 
-        ["resolved", "closed"].includes(c.status)
-      ).length;
-      const pendingComplaints = complaints.filter(c => 
-        !["resolved", "closed", "rejected"].includes(c.status)
-      ).length;
+      const totalComplaints = complaints?.length || 0;
+      const resolvedComplaints =
+        complaints?.filter((c) => c.status === "resolved" || c.status === "closed").length || 0;
+      const pendingComplaints =
+        complaints?.filter((c) => c.status === "open" || c.status === "in_progress").length || 0;
 
-      // Complaints by status
-      const statusCounts: Record<string, number> = {};
-      complaints.forEach(c => {
-        statusCounts[c.status] = (statusCounts[c.status] || 0) + 1;
-      });
-      const complaintsByStatus = Object.entries(statusCounts).map(([name, value]) => ({
-        name: name.replace("_", " "),
+      // Calculate average resolution time
+      const resolvedWithTime = complaints?.filter(
+        (c) => c.resolved_at && (c.status === "resolved" || c.status === "closed")
+      ) || [];
+      
+      const totalResolutionTime = resolvedWithTime.reduce((acc, c) => {
+        const created = new Date(c.created_at).getTime();
+        const resolved = new Date(c.resolved_at!).getTime();
+        return acc + (resolved - created);
+      }, 0);
+
+      const avgResolutionTime =
+        resolvedWithTime.length > 0
+          ? Math.round(totalResolutionTime / resolvedWithTime.length / (1000 * 60 * 60))
+          : 0;
+
+      // Calculate average first response time
+      const withFirstResponse = complaints?.filter(c => c.first_response_at) || [];
+      const totalFirstResponseTime = withFirstResponse.reduce((acc, c) => {
+        const created = new Date(c.created_at).getTime();
+        const responded = new Date(c.first_response_at!).getTime();
+        return acc + (responded - created);
+      }, 0);
+
+      const avgFirstResponseTime =
+        withFirstResponse.length > 0
+          ? Math.round(totalFirstResponseTime / withFirstResponse.length / (1000 * 60 * 60))
+          : 0;
+
+      const resolutionRate =
+        totalComplaints > 0 ? Math.round((resolvedComplaints / totalComplaints) * 100) : 0;
+
+      // Calculate SLA compliance
+      const withSLA = complaints?.filter(c => c.sla_status) || [];
+      const slaMetCount = withSLA.filter(c => c.sla_status === 'met' || c.sla_status === 'on_track').length;
+      const slaCompliance = withSLA.length > 0 ? Math.round((slaMetCount / withSLA.length) * 100) : 0;
+
+      // Group by status
+      const statusCounts = complaints?.reduce((acc, c) => {
+        const status = c.status.replace("_", " ");
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const complaintsByStatus = Object.entries(statusCounts || {}).map(([name, value]) => ({
+        name: name.charAt(0).toUpperCase() + name.slice(1),
         value,
-        color: statusColors[name] || "#6B7280",
       }));
 
-      // Complaints by priority
-      const priorityCounts: Record<string, number> = {};
-      complaints.forEach(c => {
-        priorityCounts[c.priority] = (priorityCounts[c.priority] || 0) + 1;
-      });
-      const complaintsByPriority = Object.entries(priorityCounts).map(([name, value]) => ({
+      // Group by priority
+      const priorityCounts = complaints?.reduce((acc, c) => {
+        acc[c.priority] = (acc[c.priority] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const complaintsByPriority = Object.entries(priorityCounts || {}).map(([name, value]) => ({
+        name: name.charAt(0).toUpperCase() + name.slice(1),
+        value,
+      }));
+
+      // Group by category
+      const categoryCounts = complaints?.reduce((acc, c) => {
+        const categoryName = c.categories?.name || "Uncategorized";
+        acc[categoryName] = (acc[categoryName] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const complaintsByCategory = Object.entries(categoryCounts || {}).map(([name, value]) => ({
         name,
         value,
-        color: priorityColors[name] || "#6B7280",
       }));
 
-      // Complaints by category
-      const categoryCounts: Record<string, number> = {};
-      complaints.forEach(c => {
-        const categoryName = (c.category as any)?.name || "Uncategorized";
-        categoryCounts[categoryName] = (categoryCounts[categoryName] || 0) + 1;
-      });
-      const complaintsByCategory = Object.entries(categoryCounts)
-        .map(([name, count]) => ({ name, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 6);
-
-      // Weekly trend (last 7 days)
-      const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-      const weeklyTrend = [];
+      // Weekly trend
+      const now = new Date();
+      const weeklyData = [];
       for (let i = 6; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        const dayStart = new Date(date.setHours(0, 0, 0, 0));
-        const dayEnd = new Date(date.setHours(23, 59, 59, 999));
-        
-        const dayComplaints = complaints.filter(c => {
-          const created = new Date(c.created_at);
-          return created >= dayStart && created <= dayEnd;
-        }).length;
-        
-        const dayResolved = complaints.filter(c => {
-          if (!c.resolved_at) return false;
-          const resolved = new Date(c.resolved_at);
-          return resolved >= dayStart && resolved <= dayEnd;
-        }).length;
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - i * 7);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 7);
 
-        weeklyTrend.push({
-          day: days[new Date(dayStart).getDay()],
-          complaints: dayComplaints,
-          resolved: dayResolved,
+        const created =
+          complaints?.filter((c) => {
+            const date = new Date(c.created_at);
+            return date >= weekStart && date < weekEnd;
+          }).length || 0;
+
+        const resolved =
+          complaints?.filter((c) => {
+            if (!c.resolved_at) return false;
+            const date = new Date(c.resolved_at);
+            return date >= weekStart && date < weekEnd;
+          }).length || 0;
+
+        weeklyData.push({
+          week: `Week ${7 - i}`,
+          created,
+          resolved,
         });
       }
 
-      // Average resolution time
-      const resolvedWithTime = complaints.filter(c => c.resolved_at);
-      const avgResolutionTime = resolvedWithTime.length > 0
-        ? resolvedWithTime.reduce((acc, c) => {
-            const created = new Date(c.created_at).getTime();
-            const resolved = new Date(c.resolved_at).getTime();
-            return acc + (resolved - created) / (1000 * 60 * 60);
-          }, 0) / resolvedWithTime.length
-        : 0;
+      // Response time trend (last 30 days)
+      const responseTimeTrend = [];
+      for (let i = 29; i >= 0; i--) {
+        const date = new Date(now);
+        date.setDate(now.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
 
-      const resolutionRate = totalComplaints > 0
-        ? Math.round((resolvedComplaints / totalComplaints) * 100)
-        : 0;
+        const dayComplaints = complaints?.filter(c => {
+          if (!c.first_response_at) return false;
+          const responseDate = new Date(c.first_response_at).toISOString().split('T')[0];
+          return responseDate === dateStr;
+        }) || [];
+
+        if (dayComplaints.length > 0) {
+          const avgTime = dayComplaints.reduce((acc, c) => {
+            const created = new Date(c.created_at).getTime();
+            const responded = new Date(c.first_response_at!).getTime();
+            return acc + (responded - created) / (1000 * 60 * 60);
+          }, 0) / dayComplaints.length;
+
+          responseTimeTrend.push({
+            date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            avgTime: Math.round(avgTime * 10) / 10
+          });
+        }
+      }
+
+      // SLA performance by month (last 6 months)
+      const slaPerformance = [];
+      for (let i = 5; i >= 0; i--) {
+        const monthDate = new Date(now);
+        monthDate.setMonth(now.getMonth() - i);
+        const monthStr = monthDate.toLocaleDateString('en-US', { month: 'short' });
+
+        const monthComplaints = complaints?.filter(c => {
+          const created = new Date(c.created_at);
+          return created.getMonth() === monthDate.getMonth() && 
+                 created.getFullYear() === monthDate.getFullYear();
+        }) || [];
+
+        const met = monthComplaints.filter(c => c.sla_status === 'met' || c.sla_status === 'on_track').length;
+        const breached = monthComplaints.filter(c => c.sla_status === 'breached').length;
+        const atRisk = monthComplaints.filter(c => c.sla_status === 'at_risk').length;
+
+        slaPerformance.push({ month: monthStr, met, breached, atRisk });
+      }
 
       setData({
         totalComplaints,
         resolvedComplaints,
+        pendingComplaints,
         avgResolutionTime,
+        avgFirstResponseTime,
+        resolutionRate,
+        slaCompliance,
         complaintsByStatus,
         complaintsByPriority,
         complaintsByCategory,
-        weeklyTrend,
-        resolutionRate,
-        pendingComplaints,
+        weeklyTrend: weeklyData,
+        responseTimeTrend,
+        slaPerformance,
       });
     } catch (error) {
       console.error("Error fetching analytics:", error);
@@ -180,7 +264,7 @@ export default function Analytics() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-[60vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       </DashboardLayout>
     );
@@ -190,230 +274,210 @@ export default function Analytics() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8">
-        {/* Header */}
+      <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <BarChart3 className="w-8 h-8 text-primary" />
+          <h1 className="text-3xl font-bold gradient-text flex items-center gap-2">
+            <BarChart3 className="h-8 w-8" />
             Analytics Dashboard
           </h1>
-          <p className="text-muted-foreground">Insights and statistics about complaint management</p>
+          <p className="text-muted-foreground">Real-time insights and performance metrics</p>
         </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="glass-strong border-border/50 hover-lift">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Resolution Rate</CardTitle>
-              <TrendingUp className="w-5 h-5 text-success" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+          <Card className="glass-effect border-primary/20">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Complaints</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-success">{data.resolutionRate}%</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {data.resolvedComplaints} of {data.totalComplaints} resolved
+              <div className="text-2xl font-bold">{data.totalComplaints}</div>
+              <p className="text-xs text-muted-foreground">All time complaints</p>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-effect border-primary/20">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Resolution Rate</CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{data.resolutionRate}%</div>
+              <p className="text-xs text-muted-foreground">
+                {data.resolvedComplaints} resolved
               </p>
             </CardContent>
           </Card>
 
-          <Card className="glass-strong border-border/50 hover-lift">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
-              <AlertCircle className="w-5 h-5 text-warning" />
+          <Card className="glass-effect border-primary/20">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Avg Response Time</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-warning">{data.pendingComplaints}</div>
-              <p className="text-xs text-muted-foreground mt-1">Awaiting resolution</p>
+              <div className="text-2xl font-bold">{data.avgFirstResponseTime}h</div>
+              <p className="text-xs text-muted-foreground">First response time</p>
             </CardContent>
           </Card>
 
-          <Card className="glass-strong border-border/50 hover-lift">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Avg Resolution</CardTitle>
-              <Clock className="w-5 h-5 text-primary" />
+          <Card className="glass-effect border-primary/20">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Avg Resolution Time</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">
-                {data.avgResolutionTime < 24
-                  ? `${Math.round(data.avgResolutionTime)}h`
-                  : `${Math.round(data.avgResolutionTime / 24)}d`}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">Average time to resolve</p>
+              <div className="text-2xl font-bold">{data.avgResolutionTime}h</div>
+              <p className="text-xs text-muted-foreground">Time to resolve</p>
             </CardContent>
           </Card>
 
-          <Card className="glass-strong border-border/50 hover-lift">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total</CardTitle>
-              <Activity className="w-5 h-5 text-primary" />
+          <Card className="glass-effect border-primary/20">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">SLA Compliance</CardTitle>
+              <AlertCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{data.totalComplaints}</div>
-              <p className="text-xs text-muted-foreground mt-1">All time complaints</p>
+              <div className="text-2xl font-bold">{data.slaCompliance}%</div>
+              <p className="text-xs text-muted-foreground">Within SLA targets</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Charts Row 1 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Weekly Trend */}
-          <Card className="glass-strong border-border/50">
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card className="glass-effect border-primary/20">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-primary" />
-                Weekly Trend
-              </CardTitle>
-              <CardDescription>Complaints created and resolved this week</CardDescription>
+              <CardTitle>Weekly Trend</CardTitle>
+              <CardDescription>Complaints created vs resolved</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={data.weeklyTrend}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" />
-                    <YAxis stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "8px",
-                      }}
-                    />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="complaints"
-                      stroke="#8B5CF6"
-                      strokeWidth={2}
-                      dot={{ fill: "#8B5CF6" }}
-                      name="Created"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="resolved"
-                      stroke="#10B981"
-                      strokeWidth={2}
-                      dot={{ fill: "#10B981" }}
-                      name="Resolved"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={data.weeklyTrend}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                  <XAxis dataKey="week" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Area type="monotone" dataKey="created" stackId="1" stroke="#8B5CF6" fill="#8B5CF6" fillOpacity={0.6} name="Created" />
+                  <Area type="monotone" dataKey="resolved" stackId="2" stroke="#10b981" fill="#10b981" fillOpacity={0.6} name="Resolved" />
+                </AreaChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          {/* By Category */}
-          <Card className="glass-strong border-border/50">
+          <Card className="glass-effect border-primary/20">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-primary" />
-                By Category
-              </CardTitle>
-              <CardDescription>Complaints distribution by category</CardDescription>
+              <CardTitle>Response Time Trend</CardTitle>
+              <CardDescription>Average first response time (hours)</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.complaintsByCategory} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis type="number" stroke="hsl(var(--muted-foreground))" />
-                    <YAxis dataKey="name" type="category" stroke="hsl(var(--muted-foreground))" width={100} />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "8px",
-                      }}
-                    />
-                    <Bar dataKey="count" fill="#8B5CF6" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={data.responseTimeTrend}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="avgTime" stroke="#EC4899" strokeWidth={2} name="Avg Hours" />
+                </LineChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>
 
-        {/* Charts Row 2 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* By Status */}
-          <Card className="glass-strong border-border/50">
+        {/* SLA Performance */}
+        <Card className="glass-effect border-primary/20">
+          <CardHeader>
+            <CardTitle>SLA Performance by Month</CardTitle>
+            <CardDescription>SLA compliance tracking over time</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={data.slaPerformance}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="met" fill="#10b981" name="Met SLA" />
+                <Bar dataKey="atRisk" fill="#f59e0b" name="At Risk" />
+                <Bar dataKey="breached" fill="#ef4444" name="Breached" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Distribution Charts */}
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card className="glass-effect border-primary/20">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <PieChart className="w-5 h-5 text-primary" />
-                By Status
-              </CardTitle>
-              <CardDescription>Current status distribution</CardDescription>
+              <CardTitle>Complaints by Category</CardTitle>
+              <CardDescription>Distribution across categories</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RechartsPieChart>
-                    <Pie
-                      data={data.complaintsByStatus}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {data.complaintsByStatus.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "8px",
-                      }}
-                    />
-                    <Legend />
-                  </RechartsPieChart>
-                </ResponsiveContainer>
-              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={data.complaintsByCategory} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                  <XAxis type="number" />
+                  <YAxis type="category" dataKey="name" width={120} />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#8B5CF6" />
+                </BarChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          {/* By Priority */}
-          <Card className="glass-strong border-border/50">
+          <Card className="glass-effect border-primary/20">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-primary" />
-                By Priority
-              </CardTitle>
-              <CardDescription>Priority level distribution</CardDescription>
+              <CardTitle>Status Distribution</CardTitle>
+              <CardDescription>Current complaint statuses</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RechartsPieChart>
-                    <Pie
-                      data={data.complaintsByPriority}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {data.complaintsByPriority.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "8px",
-                      }}
-                    />
-                    <Legend />
-                  </RechartsPieChart>
-                </ResponsiveContainer>
-              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={data.complaintsByStatus}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={(entry) => `${entry.name}: ${entry.value}`}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {data.complaintsByStatus.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={statusColors[entry.name] || "#8B5CF6"} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>
+
+        {/* Priority Distribution */}
+        <Card className="glass-effect border-primary/20">
+          <CardHeader>
+            <CardTitle>Priority Distribution</CardTitle>
+            <CardDescription>Complaints by priority level</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={data.complaintsByPriority}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="value" fill="#EC4899">
+                  {data.complaintsByPriority.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={priorityColors[entry.name] || "#EC4899"} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );

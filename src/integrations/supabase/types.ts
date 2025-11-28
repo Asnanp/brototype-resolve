@@ -83,6 +83,42 @@ export type Database = {
         }
         Relationships: []
       }
+      assignment_rules: {
+        Row: {
+          assigned_to: string
+          conditions: Json
+          created_at: string | null
+          created_by: string
+          id: string
+          is_active: boolean | null
+          name: string
+          priority: number
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to: string
+          conditions: Json
+          created_at?: string | null
+          created_by: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          priority?: number
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string
+          conditions?: Json
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          priority?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       attachments: {
         Row: {
           complaint_id: string

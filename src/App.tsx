@@ -21,6 +21,8 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AllComplaints from "./pages/admin/AllComplaints";
 import UserManagement from "./pages/admin/UserManagement";
 import Analytics from "./pages/admin/Analytics";
+import AutomationRules from "./pages/admin/AutomationRules";
+import ComplaintWidget from "./pages/ComplaintWidget";
 import CategoryManagement from "./pages/admin/CategoryManagement";
 import TagManagement from "./pages/admin/TagManagement";
 import CannedResponses from "./pages/admin/CannedResponses";
@@ -51,6 +53,8 @@ const App = () => (
             <Route path="/terms" element={<Terms />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            {/* Public widget route */}
+            <Route path="/widget" element={<ComplaintWidget />} />
             
             {/* Student Dashboard Routes */}
             <Route path="/dashboard" element={<ProtectedRoute requiredRole="student"><StudentDashboard /></ProtectedRoute>} />
@@ -69,6 +73,7 @@ const App = () => (
             <Route path="/admin/complaints/:id" element={<ProtectedRoute requiredRole="admin"><ComplaintDetail /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute requiredRole="admin"><UserManagement /></ProtectedRoute>} />
             <Route path="/admin/analytics" element={<ProtectedRoute requiredRole="admin"><Analytics /></ProtectedRoute>} />
+            <Route path="/admin/automation" element={<ProtectedRoute requiredRole="admin"><AutomationRules /></ProtectedRoute>} />
             <Route path="/admin/categories" element={<ProtectedRoute requiredRole="admin"><CategoryManagement /></ProtectedRoute>} />
             <Route path="/admin/tags" element={<ProtectedRoute requiredRole="admin"><TagManagement /></ProtectedRoute>} />
             <Route path="/admin/responses" element={<ProtectedRoute requiredRole="admin"><CannedResponses /></ProtectedRoute>} />
