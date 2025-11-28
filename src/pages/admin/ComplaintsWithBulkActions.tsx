@@ -77,8 +77,8 @@ export default function ComplaintsWithBulkActions() {
           created_at,
           sla_breach_at,
           sla_status,
-          category:categories(name, color),
-          profiles!complaints_student_id_fkey(full_name)
+          student_id,
+          category:categories(name, color)
         `, { count: "exact" });
 
       // Apply filters
@@ -110,7 +110,24 @@ export default function ComplaintsWithBulkActions() {
 
       if (error) throw error;
 
-      setComplaints((data || []) as any);
+      // Fetch student profiles separately
+      const studentIds = [...new Set(data?.map(c => c.student_id).filter(Boolean))];
+      if (studentIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, full_name")
+          .in("user_id", studentIds);
+
+        const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+        const enrichedData = data?.map(complaint => ({
+          ...complaint,
+          profiles: profileMap.get(complaint.student_id)
+        }));
+        setComplaints((enrichedData || []) as any);
+      } else {
+        setComplaints((data || []) as any);
+      }
+      
       setTotalPages(Math.ceil((count || 0) / pageSize));
     } catch (error) {
       console.error("Error fetching complaints:", error);
