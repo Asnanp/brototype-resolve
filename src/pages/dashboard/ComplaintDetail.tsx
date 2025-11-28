@@ -26,7 +26,11 @@ import {
   Star,
   Paperclip,
   Download,
+  Lock,
 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 interface Comment {
   id: string;
@@ -218,6 +222,8 @@ export default function ComplaintDetail() {
     }
   };
 
+  const [isInternal, setIsInternal] = useState(false);
+
   const handleSubmitComment = async () => {
     if (!newComment.trim()) return;
 
@@ -227,13 +233,14 @@ export default function ComplaintDetail() {
         complaint_id: id,
         user_id: user?.id,
         content: newComment.trim(),
-        is_internal: false,
+        is_internal: role === "admin" ? isInternal : false,
       });
 
       if (error) throw error;
 
-      toast.success("Comment added");
+      toast.success(isInternal ? "Internal note added" : "Comment added");
       setNewComment("");
+      setIsInternal(false);
       fetchComments();
     } catch (error: any) {
       toast.error("Failed to add comment", { description: error.message });
@@ -498,10 +505,16 @@ export default function ComplaintDetail() {
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
+                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-medium text-sm">
                             {comment.profiles?.full_name || comment.profiles?.email || "User"}
                           </span>
+                          {comment.is_internal && (
+                            <Badge variant="outline" className="text-xs bg-orange-500/20 border-orange-500/50">
+                              <Lock className="h-3 w-3 mr-1" />
+                              Admin Only
+                            </Badge>
+                          )}
                           {comment.is_solution && (
                             <Badge variant="outline" className="bg-success/20 text-success border-success/30 text-xs">
                               Solution
@@ -535,7 +548,19 @@ export default function ComplaintDetail() {
                 className="glass border-border/50 min-h-[100px]"
                 disabled={submitting}
               />
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-2">
+                {role === "admin" && (
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="internal-note"
+                      checked={isInternal}
+                      onCheckedChange={(checked) => setIsInternal(!!checked)}
+                    />
+                    <Label htmlFor="internal-note" className="text-sm">
+                      Internal note
+                    </Label>
+                  </div>
+                )}
                 <Button
                   onClick={handleSubmitComment}
                   disabled={!newComment.trim() || submitting}

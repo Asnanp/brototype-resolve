@@ -303,6 +303,60 @@ export type Database = {
           },
         ]
       }
+      complaint_templates: {
+        Row: {
+          category_id: string | null
+          created_at: string | null
+          created_by: string
+          default_priority: Database["public"]["Enums"]["priority_level"] | null
+          description_template: string
+          fields: Json | null
+          id: string
+          is_active: boolean | null
+          name: string
+          title_template: string
+          updated_at: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string | null
+          created_by: string
+          default_priority?:
+            | Database["public"]["Enums"]["priority_level"]
+            | null
+          description_template: string
+          fields?: Json | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          title_template: string
+          updated_at?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string | null
+          created_by?: string
+          default_priority?:
+            | Database["public"]["Enums"]["priority_level"]
+            | null
+          description_template?: string
+          fields?: Json | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          title_template?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "complaint_templates_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       complaint_watchers: {
         Row: {
           complaint_id: string
@@ -610,6 +664,122 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      poll_options: {
+        Row: {
+          created_at: string | null
+          id: string
+          option_text: string
+          order_index: number | null
+          poll_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          option_text: string
+          order_index?: number | null
+          poll_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          option_text?: string
+          order_index?: number | null
+          poll_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poll_options_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "polls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      poll_votes: {
+        Row: {
+          created_at: string | null
+          id: string
+          option_id: string
+          poll_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          option_id: string
+          poll_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          option_id?: string
+          poll_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poll_votes_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "poll_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "poll_votes_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "polls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      polls: {
+        Row: {
+          allow_multiple: boolean | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          ends_at: string | null
+          id: string
+          is_active: boolean | null
+          is_anonymous: boolean | null
+          starts_at: string | null
+          target_audience: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          allow_multiple?: boolean | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_anonymous?: boolean | null
+          starts_at?: string | null
+          target_audience?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          allow_multiple?: boolean | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_anonymous?: boolean | null
+          starts_at?: string | null
+          target_audience?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
