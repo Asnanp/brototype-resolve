@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
 import { FileUpload } from "@/components/FileUpload";
+import { RichTextEditor } from "@/components/RichTextEditor";
+import { SmartReplyButton } from "@/components/SmartReplyButton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -529,7 +531,10 @@ export default function ComplaintDetail() {
                             })}
                           </span>
                         </div>
-                        <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
+                        <div 
+                          className="text-sm prose prose-invert prose-sm max-w-none"
+                          dangerouslySetInnerHTML={{ __html: comment.content }}
+                        />
                       </div>
                     </div>
                   </div>
@@ -541,23 +546,32 @@ export default function ComplaintDetail() {
 
             {/* Add Comment */}
             <div className="space-y-3">
-              <Textarea
-                placeholder="Write a comment..."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                className="glass border-border/50 min-h-[100px]"
-                disabled={submitting}
+              {role === "admin" && (
+                <div className="flex gap-2">
+                  <SmartReplyButton
+                    complaintTitle={complaint.title}
+                    complaintDescription={complaint.description}
+                    category={complaint.category?.name}
+                    onReplyGenerated={(reply) => setNewComment(reply)}
+                  />
+                </div>
+              )}
+              <RichTextEditor
+                content={newComment}
+                onChange={setNewComment}
+                placeholder="Write a comment with rich formatting..."
               />
-              <div className="flex justify-end gap-2">
+              <div className="flex justify-between items-center gap-2">
                 {role === "admin" && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 p-3 rounded-xl glass border border-border/50">
                     <Checkbox
                       id="internal-note"
                       checked={isInternal}
                       onCheckedChange={(checked) => setIsInternal(!!checked)}
                     />
-                    <Label htmlFor="internal-note" className="text-sm">
-                      Internal note
+                    <Label htmlFor="internal-note" className="text-sm font-medium flex items-center gap-2">
+                      <Lock className="w-4 h-4 text-orange-500" />
+                      Admin-Only Internal Note
                     </Label>
                   </div>
                 )}
@@ -571,7 +585,7 @@ export default function ComplaintDetail() {
                   ) : (
                     <Send className="w-4 h-4 mr-2" />
                   )}
-                  Send Comment
+                  {isInternal ? 'Send Internal Note' : 'Send Comment'}
                 </Button>
               </div>
             </div>
