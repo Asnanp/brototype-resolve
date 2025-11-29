@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
+import { StudentAIAssistant } from "@/components/StudentAIAssistant";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -16,6 +18,8 @@ import {
   Bell,
   ArrowRight,
   Loader2,
+  BarChart3,
+  Calendar,
 } from "lucide-react";
 
 interface ComplaintStats {
@@ -42,6 +46,14 @@ interface Notification {
   created_at: string;
 }
 
+interface Poll {
+  id: string;
+  title: string;
+  description: string | null;
+  ends_at: string | null;
+  is_active: boolean;
+}
+
 const statusColors: Record<string, string> = {
   open: "bg-info/20 text-info border-info/30",
   in_progress: "bg-warning/20 text-warning border-warning/30",
@@ -63,6 +75,7 @@ export default function StudentDashboard() {
   const [stats, setStats] = useState<ComplaintStats>({ total: 0, open: 0, inProgress: 0, resolved: 0 });
   const [recentComplaints, setRecentComplaints] = useState<RecentComplaint[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [activePolls, setActivePolls] = useState<Poll[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -111,6 +124,19 @@ export default function StudentDashboard() {
       if (notifs) {
         setNotifications(notifs);
       }
+
+      // Fetch active polls
+      const { data: polls } = await supabase
+        .from("polls")
+        .select("id, title, description, ends_at, is_active")
+        .eq("is_active", true)
+        .gte("ends_at", new Date().toISOString())
+        .order("created_at", { ascending: false })
+        .limit(3);
+
+      if (polls) {
+        setActivePolls(polls);
+      }
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
     } finally {
@@ -134,60 +160,122 @@ export default function StudentDashboard() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold">Welcome back!</h1>
-            <p className="text-muted-foreground">Here's an overview of your complaints</p>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-primary-glow to-secondary bg-clip-text text-transparent">
+              Welcome back!
+            </h1>
+            <p className="text-muted-foreground">Here's an overview of your complaints and updates</p>
           </div>
           <Link to="/dashboard/complaints/new">
-            <Button className="bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 glow">
+            <Button className="bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 glow shadow-lg">
               <PlusCircle className="w-4 h-4 mr-2" />
               New Complaint
             </Button>
           </Link>
         </div>
 
+        {/* Active Polls Banner */}
+        {activePolls.length > 0 && (
+          <Card className="glass-strong border-primary/30 glow overflow-hidden">
+            <div className="bg-gradient-to-r from-primary/10 via-primary-glow/10 to-secondary/10 p-6">
+              <CardHeader className="p-0 pb-4">
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <BarChart3 className="w-6 h-6 text-primary" />
+                  Active Polls
+                </CardTitle>
+                <CardDescription>Share your opinion on these important topics</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="grid md:grid-cols-3 gap-4">
+                  {activePolls.map((poll) => (
+                    <Link key={poll.id} to="/dashboard/polls">
+                      <Card className="glass hover:bg-primary/5 transition-all hover-lift border-border/50 h-full">
+                        <CardContent className="p-4">
+                          <h3 className="font-semibold mb-2 line-clamp-2">{poll.title}</h3>
+                          {poll.description && (
+                            <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                              {poll.description}
+                            </p>
+                          )}
+                          {poll.ends_at && (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Calendar className="w-3 h-3" />
+                              Ends {new Date(poll.ends_at).toLocaleDateString()}
+                            </div>
+                          )}
+                          <Button variant="outline" size="sm" className="w-full mt-3">
+                            Vote Now
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              </CardContent>
+            </div>
+          </Card>
+        )}
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="glass-strong border-border/50 hover-lift">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <Card className="glass-strong border-border/50 hover-lift overflow-hidden relative group">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Complaints</CardTitle>
-              <FileText className="w-5 h-5 text-primary" />
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <FileText className="w-5 h-5 text-primary" />
+              </div>
             </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{stats.total}</div>
+            <CardContent className="relative z-10">
+              <div className="text-3xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+                {stats.total}
+              </div>
               <p className="text-xs text-muted-foreground mt-1">All time submissions</p>
+              <Progress value={(stats.total / (stats.total + 10)) * 100} className="mt-2 h-1" />
             </CardContent>
           </Card>
 
-          <Card className="glass-strong border-border/50 hover-lift">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <Card className="glass-strong border-border/50 hover-lift overflow-hidden relative group">
+            <div className="absolute inset-0 bg-gradient-to-br from-info/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10">
               <CardTitle className="text-sm font-medium text-muted-foreground">Open</CardTitle>
-              <AlertCircle className="w-5 h-5 text-info" />
+              <div className="h-10 w-10 rounded-full bg-info/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <AlertCircle className="w-5 h-5 text-info" />
+              </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="relative z-10">
               <div className="text-3xl font-bold text-info">{stats.open}</div>
               <p className="text-xs text-muted-foreground mt-1">Awaiting response</p>
+              <Progress value={(stats.open / Math.max(stats.total, 1)) * 100} className="mt-2 h-1" />
             </CardContent>
           </Card>
 
-          <Card className="glass-strong border-border/50 hover-lift">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <Card className="glass-strong border-border/50 hover-lift overflow-hidden relative group">
+            <div className="absolute inset-0 bg-gradient-to-br from-warning/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10">
               <CardTitle className="text-sm font-medium text-muted-foreground">In Progress</CardTitle>
-              <Clock className="w-5 h-5 text-warning" />
+              <div className="h-10 w-10 rounded-full bg-warning/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Clock className="w-5 h-5 text-warning" />
+              </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="relative z-10">
               <div className="text-3xl font-bold text-warning">{stats.inProgress}</div>
               <p className="text-xs text-muted-foreground mt-1">Being worked on</p>
+              <Progress value={(stats.inProgress / Math.max(stats.total, 1)) * 100} className="mt-2 h-1" />
             </CardContent>
           </Card>
 
-          <Card className="glass-strong border-border/50 hover-lift">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <Card className="glass-strong border-border/50 hover-lift overflow-hidden relative group">
+            <div className="absolute inset-0 bg-gradient-to-br from-success/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10">
               <CardTitle className="text-sm font-medium text-muted-foreground">Resolved</CardTitle>
-              <CheckCircle2 className="w-5 h-5 text-success" />
+              <div className="h-10 w-10 rounded-full bg-success/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <CheckCircle2 className="w-5 h-5 text-success" />
+              </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="relative z-10">
               <div className="text-3xl font-bold text-success">{stats.resolved}</div>
               <p className="text-xs text-muted-foreground mt-1">Successfully closed</p>
+              <Progress value={(stats.resolved / Math.max(stats.total, 1)) * 100} className="mt-2 h-1" />
             </CardContent>
           </Card>
         </div>
@@ -304,6 +392,7 @@ export default function StudentDashboard() {
           </Card>
         </div>
       </div>
+      <StudentAIAssistant />
     </DashboardLayout>
   );
 }
