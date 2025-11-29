@@ -31,6 +31,11 @@ import {
   Menu,
   X,
   ChevronDown,
+  Brain,
+  Vote,
+  Zap,
+  Activity,
+  FileStack,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +47,7 @@ const studentNavItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: FileText, label: "My Complaints", path: "/dashboard/complaints" },
   { icon: PlusCircle, label: "New Complaint", path: "/dashboard/complaints/new" },
+  { icon: Vote, label: "Polls", path: "/dashboard/polls" },
   { icon: Bell, label: "Notifications", path: "/dashboard/notifications" },
   { icon: BookOpen, label: "Knowledge Base", path: "/dashboard/knowledge" },
   { icon: HelpCircle, label: "FAQs", path: "/dashboard/faqs" },
@@ -50,8 +56,13 @@ const studentNavItems = [
 const adminNavItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
   { icon: FileText, label: "All Complaints", path: "/admin/complaints" },
+  { icon: Activity, label: "Activity Feed", path: "/admin/activity" },
   { icon: Users, label: "Users", path: "/admin/users" },
   { icon: BarChart3, label: "Analytics", path: "/admin/analytics" },
+  { icon: Vote, label: "Polls", path: "/admin/polls" },
+  { icon: Brain, label: "AI Training", path: "/admin/ai-training" },
+  { icon: Zap, label: "Automation", path: "/admin/automation" },
+  { icon: FileStack, label: "Templates", path: "/admin/templates" },
   { icon: FolderOpen, label: "Categories", path: "/admin/categories" },
   { icon: Tag, label: "Tags", path: "/admin/tags" },
   { icon: MessageSquare, label: "Canned Responses", path: "/admin/responses" },

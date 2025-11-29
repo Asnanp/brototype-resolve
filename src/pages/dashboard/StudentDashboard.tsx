@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
 import { StudentAIAssistant } from "@/components/StudentAIAssistant";
+import { ComplaintStatistics } from "@/components/ComplaintStatistics";
+import { QuickActions } from "@/components/QuickActions";
+import { AnnouncementsBanner } from "@/components/AnnouncementsBanner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +23,7 @@ import {
   Loader2,
   BarChart3,
   Calendar,
+  Sparkles,
 } from "lucide-react";
 
 interface ComplaintStats {
@@ -173,6 +177,9 @@ export default function StudentDashboard() {
           </Link>
         </div>
 
+        {/* Announcements */}
+        <AnnouncementsBanner />
+
         {/* Active Polls Banner */}
         {activePolls.length > 0 && (
           <Card className="glass-strong border-primary/30 glow overflow-hidden">
@@ -197,12 +204,12 @@ export default function StudentDashboard() {
                             </p>
                           )}
                           {poll.ends_at && (
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
                               <Calendar className="w-3 h-3" />
                               Ends {new Date(poll.ends_at).toLocaleDateString()}
                             </div>
                           )}
-                          <Button variant="outline" size="sm" className="w-full mt-3">
+                          <Button variant="outline" size="sm" className="w-full bg-gradient-to-r from-primary/10 to-primary-glow/10 border-primary/30">
                             Vote Now
                           </Button>
                         </CardContent>
@@ -214,6 +221,9 @@ export default function StudentDashboard() {
             </div>
           </Card>
         )}
+
+        {/* Quick Actions */}
+        <QuickActions />
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -279,6 +289,22 @@ export default function StudentDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Statistics Section */}
+        {stats.total > 0 && (
+          <Card className="glass-strong border-border/50">
+            <CardHeader className="border-b border-border/50 bg-gradient-to-r from-primary/5 via-transparent to-secondary/5">
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary" />
+                Your Complaint Analytics
+              </CardTitle>
+              <CardDescription>Visual breakdown of your complaint history</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <ComplaintStatistics studentId={user?.id} />
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Recent Complaints */}

@@ -47,6 +47,45 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_training_data: {
+        Row: {
+          answer: string
+          category: string | null
+          created_at: string | null
+          created_by: string
+          id: string
+          is_active: boolean | null
+          keywords: string[] | null
+          question: string
+          updated_at: string | null
+          usage_count: number | null
+        }
+        Insert: {
+          answer: string
+          category?: string | null
+          created_at?: string | null
+          created_by: string
+          id?: string
+          is_active?: boolean | null
+          keywords?: string[] | null
+          question: string
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Update: {
+          answer?: string
+          category?: string | null
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          is_active?: boolean | null
+          keywords?: string[] | null
+          question?: string
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Relationships: []
+      }
       announcements: {
         Row: {
           content: string
@@ -260,6 +299,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "comments_complaint_id_fkey"
+            columns: ["complaint_id"]
+            isOneToOne: false
+            referencedRelation: "complaints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      complaint_actions_log: {
+        Row: {
+          action_type: string
+          complaint_id: string
+          created_at: string | null
+          id: string
+          new_value: string | null
+          notes: string | null
+          old_value: string | null
+          performed_by: string
+        }
+        Insert: {
+          action_type: string
+          complaint_id: string
+          created_at?: string | null
+          id?: string
+          new_value?: string | null
+          notes?: string | null
+          old_value?: string | null
+          performed_by: string
+        }
+        Update: {
+          action_type?: string
+          complaint_id?: string
+          created_at?: string | null
+          id?: string
+          new_value?: string | null
+          notes?: string | null
+          old_value?: string | null
+          performed_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "complaint_actions_log_complaint_id_fkey"
             columns: ["complaint_id"]
             isOneToOne: false
             referencedRelation: "complaints"

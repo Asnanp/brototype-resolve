@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
+import { AdminStatsSummary } from "@/components/AdminStatsSummary";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -163,8 +164,10 @@ export default function AdminDashboard() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Overview of complaint management system</p>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-primary-glow to-secondary bg-clip-text text-transparent">
+              Admin Dashboard
+            </h1>
+            <p className="text-muted-foreground">Complete system overview and analytics</p>
           </div>
           <Link to="/admin/complaints">
             <Button className="bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 glow">
@@ -173,6 +176,9 @@ export default function AdminDashboard() {
             </Button>
           </Link>
         </div>
+
+        {/* Stats Summary */}
+        <AdminStatsSummary />
 
         {/* Alert for urgent complaints */}
         {stats.urgentComplaints > 0 && (

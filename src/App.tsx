@@ -39,6 +39,7 @@ import KnowledgeBase from "./pages/dashboard/KnowledgeBase";
 import FAQs from "./pages/dashboard/FAQs";
 import Polls from "./pages/dashboard/Polls";
 import EmailPreferences from "./pages/dashboard/EmailPreferences";
+import AITraining from "./pages/admin/AITraining";
 
 const queryClient = new QueryClient();
 
@@ -89,6 +90,7 @@ const App = () => (
             <Route path="/admin/announcements" element={<ProtectedRoute requiredRole="admin"><Announcements /></ProtectedRoute>} />
             <Route path="/admin/faqs" element={<ProtectedRoute requiredRole="admin"><FAQManagement /></ProtectedRoute>} />
             <Route path="/admin/settings" element={<ProtectedRoute requiredRole="admin"><Settings /></ProtectedRoute>} />
+            <Route path="/admin/ai-training" element={<ProtectedRoute requiredRole="admin"><AITraining /></ProtectedRoute>} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -40,7 +40,7 @@ export const StudentAIAssistant = () => {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/student-ai-assistant`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/student-ai-assistant-enhanced`,
         {
           method: 'POST',
           headers: {
