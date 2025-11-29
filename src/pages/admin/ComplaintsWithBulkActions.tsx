@@ -180,15 +180,15 @@ export default function ComplaintsWithBulkActions() {
           onSearch={fetchComplaints}
         />
 
-        <Card className="glass-strong border-border/50">
-          <CardHeader>
+        <Card className="glass-strong border-border/50 shadow-xl">
+          <CardHeader className="border-b border-border/50 bg-gradient-to-r from-primary/5 via-transparent to-secondary/5">
             <div className="flex items-center justify-between">
-              <CardTitle>
-                {complaints.length} Complaints
+              <CardTitle className="text-xl">
+                {loading ? 'Loading...' : `${complaints.length} Complaint${complaints.length !== 1 ? 's' : ''}`}
               </CardTitle>
               <div className="flex items-center gap-2">
                 {selectedIds.length > 0 && (
-                  <Badge variant="secondary">
+                  <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30">
                     {selectedIds.length} selected
                   </Badge>
                 )}
@@ -297,29 +297,34 @@ export default function ComplaintsWithBulkActions() {
             </div>
 
             {/* Pagination */}
-            <div className="flex items-center justify-between mt-4">
-              <p className="text-sm text-muted-foreground">
-                Page {page} of {totalPages}
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1 || loading}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages || loading}
-                >
-                  Next
-                </Button>
+            {!loading && complaints.length > 0 && (
+              <div className="flex items-center justify-between p-4 border-t border-border/50 bg-background/30">
+                <p className="text-sm text-muted-foreground">
+                  Page <span className="font-medium text-foreground">{page}</span> of{" "}
+                  <span className="font-medium text-foreground">{totalPages}</span>
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1 || loading}
+                    className="glass border-border/50"
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages || loading}
+                    className="glass border-border/50"
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>

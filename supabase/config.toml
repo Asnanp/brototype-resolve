@@ -2,3 +2,6 @@ project_id = "wiacigljdeirtfqggsto"
 
 [functions.generate-smart-reply]
 verify_jwt = false
+
+[functions.student-ai-assistant]
+verify_jwt = false
