@@ -4,6 +4,7 @@ import { DashboardLayout } from "@/components/layouts/DashboardLayout";
 import { AdvancedSearchPanel } from "@/components/AdvancedSearchPanel";
 import { BulkActionsBar } from "@/components/BulkActionsBar";
 import { SLAIndicator } from "@/components/SLAIndicator";
+import { ComplaintQRCode } from "@/components/ComplaintQRCode";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -278,7 +279,11 @@ export default function ComplaintsWithBulkActions() {
                           addSuffix: true,
                         })}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right flex gap-2 justify-end">
+                        <ComplaintQRCode
+                          complaintId={complaint.id}
+                          ticketNumber={complaint.ticket_number}
+                        />
                         <Link to={`/admin/complaints/${complaint.id}`}>
                           <Button variant="ghost" size="sm">
                             <Eye className="w-4 h-4" />

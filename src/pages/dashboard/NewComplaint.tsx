@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
+import { RichTextEditor } from "@/components/RichTextEditor";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -230,17 +231,13 @@ export default function NewComplaint() {
               {/* Description */}
               <div className="space-y-2">
                 <Label htmlFor="description">Description *</Label>
-                <Textarea
-                  id="description"
+                <RichTextEditor
+                  content={formData.description}
+                  onChange={(content) => setFormData({ ...formData, description: content })}
                   placeholder="Describe your complaint in detail. Include any relevant information such as dates, times, people involved, etc."
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="glass border-border/50 min-h-[200px]"
-                  required
-                  disabled={loading}
                 />
                 <p className="text-xs text-muted-foreground">
-                  {formData.description.length}/5000 characters
+                  Use the toolbar above for rich text formatting
                 </p>
               </div>
 
