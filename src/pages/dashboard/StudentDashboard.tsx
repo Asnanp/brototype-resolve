@@ -5,12 +5,14 @@ import { StudentAIAssistant } from "@/components/StudentAIAssistant";
 import { ComplaintStatistics } from "@/components/ComplaintStatistics";
 import { QuickActions } from "@/components/QuickActions";
 import { AnnouncementsBanner } from "@/components/AnnouncementsBanner";
+import { SatisfactionSurvey } from "@/components/SatisfactionSurvey";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   FileText,
   PlusCircle,
@@ -24,6 +26,11 @@ import {
   BarChart3,
   Calendar,
   Sparkles,
+  Trophy,
+  Zap,
+  Star,
+  Target,
+  Activity,
 } from "lucide-react";
 
 interface ComplaintStats {
@@ -58,6 +65,11 @@ interface Poll {
   is_active: boolean;
 }
 
+interface PendingSurvey {
+  complaintId: string;
+  complaintTitle: string;
+}
+
 const statusColors: Record<string, string> = {
   open: "bg-info/20 text-info border-info/30",
   in_progress: "bg-warning/20 text-warning border-warning/30",
@@ -80,6 +92,7 @@ export default function StudentDashboard() {
   const [recentComplaints, setRecentComplaints] = useState<RecentComplaint[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [activePolls, setActivePolls] = useState<Poll[]>([]);
+  const [pendingSurvey, setPendingSurvey] = useState<PendingSurvey | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -93,7 +106,7 @@ export default function StudentDashboard() {
       // Fetch complaint stats
       const { data: complaints } = await supabase
         .from("complaints")
-        .select("status")
+        .select("id, title, status, satisfaction_rating")
         .eq("student_id", user?.id);
 
       if (complaints) {
@@ -103,6 +116,17 @@ export default function StudentDashboard() {
           inProgress: complaints.filter((c) => ["in_progress", "under_review"].includes(c.status)).length,
           resolved: complaints.filter((c) => ["resolved", "closed"].includes(c.status)).length,
         });
+
+        // Check for pending surveys (resolved but not rated)
+        const pendingRating = complaints.find(
+          (c) => c.status === "resolved" && !c.satisfaction_rating
+        );
+        if (pendingRating) {
+          setPendingSurvey({
+            complaintId: pendingRating.id,
+            complaintTitle: pendingRating.title,
+          });
+        }
       }
 
       // Fetch recent complaints
@@ -158,267 +182,390 @@ export default function StudentDashboard() {
     );
   }
 
+  const resolutionRate = stats.total > 0 ? Math.round((stats.resolved / stats.total) * 100) : 0;
+
   return (
     <DashboardLayout>
       <div className="space-y-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-primary-glow to-secondary bg-clip-text text-transparent">
-              Welcome back!
+        {/* Header with Gradient */}
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+        >
+          <div className="space-y-1">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-primary-glow to-secondary bg-clip-text text-transparent">
+              Welcome back! 👋
             </h1>
-            <p className="text-muted-foreground">Here's an overview of your complaints and updates</p>
+            <p className="text-muted-foreground text-lg">Here's what's happening with your complaints</p>
           </div>
           <Link to="/dashboard/complaints/new">
-            <Button className="bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 glow shadow-lg">
-              <PlusCircle className="w-4 h-4 mr-2" />
+            <Button className="bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 glow shadow-lg group">
+              <PlusCircle className="w-4 h-4 mr-2 group-hover:rotate-90 transition-transform" />
               New Complaint
             </Button>
           </Link>
-        </div>
+        </motion.div>
+
+        {/* Satisfaction Survey Prompt */}
+        <AnimatePresence>
+          {pendingSurvey && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+            >
+              <SatisfactionSurvey
+                complaintId={pendingSurvey.complaintId}
+                userId={user?.id || ""}
+                onComplete={() => {
+                  setPendingSurvey(null);
+                  fetchDashboardData();
+                }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Announcements */}
         <AnnouncementsBanner />
 
         {/* Active Polls Banner */}
         {activePolls.length > 0 && (
-          <Card className="glass-strong border-primary/30 glow overflow-hidden">
-            <div className="bg-gradient-to-r from-primary/10 via-primary-glow/10 to-secondary/10 p-6">
-              <CardHeader className="p-0 pb-4">
-                <CardTitle className="flex items-center gap-2 text-xl">
-                  <BarChart3 className="w-6 h-6 text-primary" />
-                  Active Polls
-                </CardTitle>
-                <CardDescription>Share your opinion on these important topics</CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="grid md:grid-cols-3 gap-4">
-                  {activePolls.map((poll) => (
-                    <Link key={poll.id} to="/dashboard/polls">
-                      <Card className="glass hover:bg-primary/5 transition-all hover-lift border-border/50 h-full">
-                        <CardContent className="p-4">
-                          <h3 className="font-semibold mb-2 line-clamp-2">{poll.title}</h3>
-                          {poll.description && (
-                            <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                              {poll.description}
-                            </p>
-                          )}
-                          {poll.ends_at && (
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
-                              <Calendar className="w-3 h-3" />
-                              Ends {new Date(poll.ends_at).toLocaleDateString()}
-                            </div>
-                          )}
-                          <Button variant="outline" size="sm" className="w-full bg-gradient-to-r from-primary/10 to-primary-glow/10 border-primary/30">
-                            Vote Now
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  ))}
-                </div>
-              </CardContent>
-            </div>
-          </Card>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Card className="glass-strong border-primary/30 glow overflow-hidden">
+              <div className="bg-gradient-to-r from-primary/10 via-primary-glow/10 to-secondary/10 p-6">
+                <CardHeader className="p-0 pb-4">
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <BarChart3 className="w-6 h-6 text-primary" />
+                    Active Polls - Share Your Voice!
+                  </CardTitle>
+                  <CardDescription>Your feedback helps us improve</CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="grid md:grid-cols-3 gap-4">
+                    {activePolls.map((poll) => (
+                      <Link key={poll.id} to="/dashboard/polls">
+                        <Card className="glass hover:bg-primary/5 transition-all hover-lift border-border/50 h-full group">
+                          <CardContent className="p-4">
+                            <h3 className="font-semibold mb-2 line-clamp-2 group-hover:text-primary transition-colors">{poll.title}</h3>
+                            {poll.description && (
+                              <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                                {poll.description}
+                              </p>
+                            )}
+                            {poll.ends_at && (
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+                                <Calendar className="w-3 h-3" />
+                                Ends {new Date(poll.ends_at).toLocaleDateString()}
+                              </div>
+                            )}
+                            <Button variant="outline" size="sm" className="w-full bg-gradient-to-r from-primary/10 to-primary-glow/10 border-primary/30 group-hover:border-primary">
+                              Vote Now
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    ))}
+                  </div>
+                </CardContent>
+              </div>
+            </Card>
+          </motion.div>
         )}
 
         {/* Quick Actions */}
         <QuickActions />
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+        >
           <Card className="glass-strong border-border/50 hover-lift overflow-hidden relative group">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Complaints</CardTitle>
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <FileText className="w-5 h-5 text-primary" />
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <FileText className="w-6 h-6 text-primary" />
               </div>
             </CardHeader>
             <CardContent className="relative z-10">
-              <div className="text-3xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+              <div className="text-4xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
                 {stats.total}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">All time submissions</p>
-              <Progress value={(stats.total / (stats.total + 10)) * 100} className="mt-2 h-1" />
+              <p className="text-sm text-muted-foreground mt-1">All time submissions</p>
+              <Progress value={(stats.total / (stats.total + 10)) * 100} className="mt-3 h-1.5" />
             </CardContent>
           </Card>
 
           <Card className="glass-strong border-border/50 hover-lift overflow-hidden relative group">
-            <div className="absolute inset-0 bg-gradient-to-br from-info/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute inset-0 bg-gradient-to-br from-info/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10">
               <CardTitle className="text-sm font-medium text-muted-foreground">Open</CardTitle>
-              <div className="h-10 w-10 rounded-full bg-info/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <AlertCircle className="w-5 h-5 text-info" />
+              <div className="h-12 w-12 rounded-full bg-info/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <AlertCircle className="w-6 h-6 text-info" />
               </div>
             </CardHeader>
             <CardContent className="relative z-10">
-              <div className="text-3xl font-bold text-info">{stats.open}</div>
-              <p className="text-xs text-muted-foreground mt-1">Awaiting response</p>
-              <Progress value={(stats.open / Math.max(stats.total, 1)) * 100} className="mt-2 h-1" />
+              <div className="text-4xl font-bold text-info">{stats.open}</div>
+              <p className="text-sm text-muted-foreground mt-1">Awaiting response</p>
+              <Progress value={(stats.open / Math.max(stats.total, 1)) * 100} className="mt-3 h-1.5" />
             </CardContent>
           </Card>
 
           <Card className="glass-strong border-border/50 hover-lift overflow-hidden relative group">
-            <div className="absolute inset-0 bg-gradient-to-br from-warning/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute inset-0 bg-gradient-to-br from-warning/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10">
               <CardTitle className="text-sm font-medium text-muted-foreground">In Progress</CardTitle>
-              <div className="h-10 w-10 rounded-full bg-warning/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Clock className="w-5 h-5 text-warning" />
+              <div className="h-12 w-12 rounded-full bg-warning/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Clock className="w-6 h-6 text-warning" />
               </div>
             </CardHeader>
             <CardContent className="relative z-10">
-              <div className="text-3xl font-bold text-warning">{stats.inProgress}</div>
-              <p className="text-xs text-muted-foreground mt-1">Being worked on</p>
-              <Progress value={(stats.inProgress / Math.max(stats.total, 1)) * 100} className="mt-2 h-1" />
+              <div className="text-4xl font-bold text-warning">{stats.inProgress}</div>
+              <p className="text-sm text-muted-foreground mt-1">Being worked on</p>
+              <Progress value={(stats.inProgress / Math.max(stats.total, 1)) * 100} className="mt-3 h-1.5" />
             </CardContent>
           </Card>
 
           <Card className="glass-strong border-border/50 hover-lift overflow-hidden relative group">
-            <div className="absolute inset-0 bg-gradient-to-br from-success/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute inset-0 bg-gradient-to-br from-success/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10">
               <CardTitle className="text-sm font-medium text-muted-foreground">Resolved</CardTitle>
-              <div className="h-10 w-10 rounded-full bg-success/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <CheckCircle2 className="w-5 h-5 text-success" />
+              <div className="h-12 w-12 rounded-full bg-success/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <CheckCircle2 className="w-6 h-6 text-success" />
               </div>
             </CardHeader>
             <CardContent className="relative z-10">
-              <div className="text-3xl font-bold text-success">{stats.resolved}</div>
-              <p className="text-xs text-muted-foreground mt-1">Successfully closed</p>
-              <Progress value={(stats.resolved / Math.max(stats.total, 1)) * 100} className="mt-2 h-1" />
+              <div className="text-4xl font-bold text-success">{stats.resolved}</div>
+              <p className="text-sm text-muted-foreground mt-1">Successfully closed</p>
+              <Progress value={(stats.resolved / Math.max(stats.total, 1)) * 100} className="mt-3 h-1.5" />
             </CardContent>
           </Card>
-        </div>
+        </motion.div>
+
+        {/* Achievement Card */}
+        {stats.total > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Card className="glass-strong border-border/50 overflow-hidden">
+              <div className="bg-gradient-to-r from-success/5 via-primary/5 to-warning/5">
+                <CardContent className="p-6">
+                  <div className="grid md:grid-cols-3 gap-6">
+                    <div className="flex items-center gap-4">
+                      <div className="h-14 w-14 rounded-full bg-gradient-to-br from-success/20 to-success/5 flex items-center justify-center">
+                        <Trophy className="w-7 h-7 text-success" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-success">{resolutionRate}%</p>
+                        <p className="text-sm text-muted-foreground">Resolution Rate</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="h-14 w-14 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                        <Target className="w-7 h-7 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold">{stats.total}</p>
+                        <p className="text-sm text-muted-foreground">Total Submissions</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="h-14 w-14 rounded-full bg-gradient-to-br from-warning/20 to-warning/5 flex items-center justify-center">
+                        <Activity className="w-7 h-7 text-warning" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold">{stats.open + stats.inProgress}</p>
+                        <p className="text-sm text-muted-foreground">Active Cases</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </div>
+            </Card>
+          </motion.div>
+        )}
 
         {/* Statistics Section */}
         {stats.total > 0 && (
-          <Card className="glass-strong border-border/50">
-            <CardHeader className="border-b border-border/50 bg-gradient-to-r from-primary/5 via-transparent to-secondary/5">
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-primary" />
-                Your Complaint Analytics
-              </CardTitle>
-              <CardDescription>Visual breakdown of your complaint history</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <ComplaintStatistics studentId={user?.id} />
-            </CardContent>
-          </Card>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Card className="glass-strong border-border/50">
+              <CardHeader className="border-b border-border/50 bg-gradient-to-r from-primary/5 via-transparent to-secondary/5">
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  Your Complaint Analytics
+                </CardTitle>
+                <CardDescription>Visual breakdown of your complaint history</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <ComplaintStatistics studentId={user?.id} />
+              </CardContent>
+            </Card>
+          </motion.div>
         )}
 
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Recent Complaints */}
-          <Card className="lg:col-span-2 glass-strong border-border/50">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-primary" />
-                  Recent Complaints
-                </CardTitle>
-                <CardDescription>Your latest submitted complaints</CardDescription>
-              </div>
-              <Link to="/dashboard/complaints">
-                <Button variant="ghost" size="sm" className="text-primary">
-                  View All
-                  <ArrowRight className="w-4 h-4 ml-1" />
-                </Button>
-              </Link>
-            </CardHeader>
-            <CardContent>
-              {recentComplaints.length === 0 ? (
-                <div className="text-center py-8">
-                  <FileText className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />
-                  <p className="text-muted-foreground">No complaints yet</p>
-                  <Link to="/dashboard/complaints/new">
-                    <Button variant="link" className="text-primary mt-2">
-                      Submit your first complaint
-                    </Button>
-                  </Link>
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.5 }}
+            className="lg:col-span-2"
+          >
+            <Card className="glass-strong border-border/50 h-full">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-primary" />
+                    Recent Complaints
+                  </CardTitle>
+                  <CardDescription>Your latest submitted complaints</CardDescription>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {recentComplaints.map((complaint) => (
-                    <Link
-                      key={complaint.id}
-                      to={`/dashboard/complaints/${complaint.id}`}
-                      className="block p-4 rounded-xl glass hover:bg-secondary/30 transition-all group"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs font-mono text-muted-foreground">
-                              {complaint.ticket_number}
-                            </span>
-                            <Badge variant="outline" className={priorityColors[complaint.priority]}>
-                              {complaint.priority}
+                <Link to="/dashboard/complaints">
+                  <Button variant="ghost" size="sm" className="text-primary group">
+                    View All
+                    <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+              </CardHeader>
+              <CardContent>
+                {recentComplaints.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                      <FileText className="w-10 h-10 text-primary/50" />
+                    </div>
+                    <h3 className="text-lg font-medium mb-2">No complaints yet</h3>
+                    <p className="text-muted-foreground mb-4">Submit your first complaint to get started</p>
+                    <Link to="/dashboard/complaints/new">
+                      <Button className="bg-gradient-to-r from-primary to-primary-glow">
+                        <PlusCircle className="w-4 h-4 mr-2" />
+                        Submit Complaint
+                      </Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {recentComplaints.map((complaint, index) => (
+                      <motion.div
+                        key={complaint.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 * index }}
+                      >
+                        <Link
+                          to={`/dashboard/complaints/${complaint.id}`}
+                          className="block p-4 rounded-xl glass hover:bg-secondary/30 transition-all group border border-transparent hover:border-primary/20"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-xs font-mono text-muted-foreground">
+                                  {complaint.ticket_number}
+                                </span>
+                                <Badge variant="outline" className={priorityColors[complaint.priority]}>
+                                  {complaint.priority}
+                                </Badge>
+                              </div>
+                              <p className="font-medium truncate group-hover:text-primary transition-colors">
+                                {complaint.title}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {new Date(complaint.created_at).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </p>
+                            </div>
+                            <Badge variant="outline" className={statusColors[complaint.status]}>
+                              {complaint.status.replace("_", " ")}
                             </Badge>
                           </div>
-                          <p className="font-medium truncate group-hover:text-primary transition-colors">
-                            {complaint.title}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {new Date(complaint.created_at).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </p>
-                        </div>
-                        <Badge variant="outline" className={statusColors[complaint.status]}>
-                          {complaint.status.replace("_", " ")}
-                        </Badge>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                        </Link>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
 
           {/* Notifications */}
-          <Card className="glass-strong border-border/50">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="w-5 h-5 text-primary" />
-                  Notifications
-                </CardTitle>
-                <CardDescription>Recent updates</CardDescription>
-              </div>
-              <Link to="/dashboard/notifications">
-                <Button variant="ghost" size="sm" className="text-primary">
-                  View All
-                </Button>
-              </Link>
-            </CardHeader>
-            <CardContent>
-              {notifications.length === 0 ? (
-                <div className="text-center py-8">
-                  <Bell className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />
-                  <p className="text-muted-foreground">No notifications</p>
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.6 }}
+          >
+            <Card className="glass-strong border-border/50 h-full">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Bell className="w-5 h-5 text-primary" />
+                    Notifications
+                  </CardTitle>
+                  <CardDescription>Recent updates</CardDescription>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  {notifications.map((notif) => (
-                    <div
-                      key={notif.id}
-                      className={`p-3 rounded-lg glass ${!notif.is_read ? "border-l-2 border-primary" : ""}`}
-                    >
-                      <p className="font-medium text-sm">{notif.title}</p>
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{notif.message}</p>
-                      <p className="text-xs text-muted-foreground/70 mt-2">
-                        {new Date(notif.created_at).toLocaleDateString()}
-                      </p>
+                <Link to="/dashboard/notifications">
+                  <Button variant="ghost" size="sm" className="text-primary">
+                    View All
+                  </Button>
+                </Link>
+              </CardHeader>
+              <CardContent>
+                {notifications.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                      <Bell className="w-8 h-8 text-primary/50" />
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    <p className="text-muted-foreground">No notifications yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {notifications.map((notif, index) => (
+                      <motion.div
+                        key={notif.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 * index }}
+                        className={`p-3 rounded-lg glass ${!notif.is_read ? "border-l-2 border-primary bg-primary/5" : ""}`}
+                      >
+                        <p className="font-medium text-sm">{notif.title}</p>
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{notif.message}</p>
+                        <p className="text-xs text-muted-foreground/70 mt-2">
+                          {new Date(notif.created_at).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
+
+        {/* AI Assistant */}
+        <StudentAIAssistant />
       </div>
-      <StudentAIAssistant />
     </DashboardLayout>
   );
 }

@@ -478,7 +478,9 @@ export type Database = {
           first_response_at: string | null
           id: string
           is_anonymous: boolean | null
+          is_merged: boolean | null
           is_public: boolean | null
+          merged_into: string | null
           priority: Database["public"]["Enums"]["priority_level"]
           resolution_notes: string | null
           resolved_at: string | null
@@ -502,7 +504,9 @@ export type Database = {
           first_response_at?: string | null
           id?: string
           is_anonymous?: boolean | null
+          is_merged?: boolean | null
           is_public?: boolean | null
+          merged_into?: string | null
           priority?: Database["public"]["Enums"]["priority_level"]
           resolution_notes?: string | null
           resolved_at?: string | null
@@ -526,7 +530,9 @@ export type Database = {
           first_response_at?: string | null
           id?: string
           is_anonymous?: boolean | null
+          is_merged?: boolean | null
           is_public?: boolean | null
+          merged_into?: string | null
           priority?: Database["public"]["Enums"]["priority_level"]
           resolution_notes?: string | null
           resolved_at?: string | null
@@ -545,6 +551,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complaints_merged_into_fkey"
+            columns: ["merged_into"]
+            isOneToOne: false
+            referencedRelation: "complaints"
             referencedColumns: ["id"]
           },
         ]
@@ -703,6 +716,48 @@ export type Database = {
           views?: number | null
         }
         Relationships: []
+      }
+      merged_complaints: {
+        Row: {
+          created_at: string
+          id: string
+          merge_reason: string | null
+          merged_by: string
+          merged_complaint_id: string
+          primary_complaint_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          merge_reason?: string | null
+          merged_by: string
+          merged_complaint_id: string
+          primary_complaint_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          merge_reason?: string | null
+          merged_by?: string
+          merged_complaint_id?: string
+          primary_complaint_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merged_complaints_merged_complaint_id_fkey"
+            columns: ["merged_complaint_id"]
+            isOneToOne: true
+            referencedRelation: "complaints"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "merged_complaints_primary_complaint_id_fkey"
+            columns: ["primary_complaint_id"]
+            isOneToOne: false
+            referencedRelation: "complaints"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -903,6 +958,56 @@ export type Database = {
         }
         Relationships: []
       }
+      satisfaction_surveys: {
+        Row: {
+          communication_rating: number | null
+          complaint_id: string
+          created_at: string
+          feedback_text: string | null
+          id: string
+          overall_rating: number
+          resolution_quality_rating: number | null
+          response_time_rating: number | null
+          suggestions: string | null
+          user_id: string
+          would_recommend: boolean | null
+        }
+        Insert: {
+          communication_rating?: number | null
+          complaint_id: string
+          created_at?: string
+          feedback_text?: string | null
+          id?: string
+          overall_rating: number
+          resolution_quality_rating?: number | null
+          response_time_rating?: number | null
+          suggestions?: string | null
+          user_id: string
+          would_recommend?: boolean | null
+        }
+        Update: {
+          communication_rating?: number | null
+          complaint_id?: string
+          created_at?: string
+          feedback_text?: string | null
+          id?: string
+          overall_rating?: number
+          resolution_quality_rating?: number | null
+          response_time_rating?: number | null
+          suggestions?: string | null
+          user_id?: string
+          would_recommend?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "satisfaction_surveys_complaint_id_fkey"
+            columns: ["complaint_id"]
+            isOneToOne: true
+            referencedRelation: "complaints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_filters: {
         Row: {
           created_at: string | null
@@ -1072,6 +1177,14 @@ export type Database = {
         Returns: string
       }
       generate_ticket_number: { Args: never; Returns: string }
+      get_poll_results: {
+        Args: { poll_uuid: string }
+        Returns: {
+          option_id: string
+          option_text: string
+          vote_count: number
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]

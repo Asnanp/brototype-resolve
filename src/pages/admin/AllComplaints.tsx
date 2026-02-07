@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
+import { ComplaintExport } from "@/components/ComplaintExport";
+import { ComplaintMerge } from "@/components/ComplaintMerge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +36,7 @@ import {
   CheckCircle,
   XCircle,
   Clock,
+  Merge,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -85,6 +88,9 @@ export default function AllComplaints() {
   const [priorityFilter, setPriorityFilter] = useState(searchParams.get("priority") || "all");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [showExport, setShowExport] = useState(false);
+  const [showMerge, setShowMerge] = useState(false);
+  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
 
   useEffect(() => {
     fetchComplaints();
@@ -165,7 +171,11 @@ export default function AllComplaints() {
             <h1 className="text-3xl font-bold">All Complaints</h1>
             <p className="text-muted-foreground">Manage and respond to all complaints</p>
           </div>
-          <Button variant="outline" className="glass border-border/50">
+          <Button 
+            variant="outline" 
+            className="glass border-border/50"
+            onClick={() => setShowExport(true)}
+          >
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
@@ -358,6 +368,16 @@ export default function AllComplaints() {
                                 <XCircle className="w-4 h-4 mr-2" />
                                 Reject
                               </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedComplaint(complaint);
+                                  setShowMerge(true);
+                                }}
+                              >
+                                <Merge className="w-4 h-4 mr-2" />
+                                Merge into...
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -402,6 +422,22 @@ export default function AllComplaints() {
             )}
           </CardContent>
         </Card>
+
+        {/* Export Dialog */}
+        <ComplaintExport open={showExport} onClose={() => setShowExport(false)} />
+
+        {/* Merge Dialog */}
+        {selectedComplaint && (
+          <ComplaintMerge
+            sourceComplaint={selectedComplaint}
+            open={showMerge}
+            onClose={() => {
+              setShowMerge(false);
+              setSelectedComplaint(null);
+            }}
+            onMergeComplete={fetchComplaints}
+          />
+        )}
       </div>
     </DashboardLayout>
   );
