@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import DOMPurify from "dompurify";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
 import { FileUpload } from "@/components/FileUpload";
 import { RichTextEditor } from "@/components/RichTextEditor";
@@ -533,7 +534,7 @@ export default function ComplaintDetail() {
                         </div>
                         <div 
                           className="text-sm prose prose-invert prose-sm max-w-none"
-                          dangerouslySetInnerHTML={{ __html: comment.content }}
+                          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(comment.content) }}
                         />
                       </div>
                     </div>
