@@ -2,6 +2,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
+import { useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Bold,
@@ -23,6 +24,9 @@ interface RichTextEditorProps {
 }
 
 export const RichTextEditor = ({ content, onChange, placeholder }: RichTextEditorProps) => {
+  const editorContainerRef = useRef<HTMLDivElement>(null);
+  const isInitialMount = useRef(true);
+  
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -40,10 +44,30 @@ export const RichTextEditor = ({ content, onChange, placeholder }: RichTextEdito
         class: 'prose prose-invert max-w-none focus:outline-none min-h-[150px] p-4 glass rounded-xl',
       },
     },
+    // Prevent the editor from trying to sync during strict mode double-mount
+    immediatelyRender: false,
   });
 
+  // Sync external content changes only after initial mount
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    if (editor && content !== editor.getHTML()) {
+      editor.commands.setContent(content);
+    }
+  }, [content, editor]);
+
   if (!editor) {
-    return null;
+    return (
+      <div className="border border-border/50 rounded-xl overflow-hidden glass-strong">
+        <div className="flex flex-wrap gap-1 p-2 border-b border-border/50 bg-background/30 h-[42px]" />
+        <div className="prose prose-invert max-w-none focus:outline-none min-h-[150px] p-4 glass rounded-xl opacity-50">
+          {placeholder || "Loading editor..."}
+        </div>
+      </div>
+    );
   }
 
   const addImage = () => {
