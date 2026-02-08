@@ -1,4 +1,21 @@
 project_id = "wiacigljdeirtfqggsto"
 
-# All edge functions now require authentication
-# Rate limiting is implemented within each function
+# Edge function authentication configuration
+# JWT verification is disabled because we handle it in code with rate limiting
+[functions.student-ai-assistant]
+verify_jwt = false
+
+[functions.student-ai-assistant-enhanced]
+verify_jwt = false
+
+[functions.generate-smart-reply]
+verify_jwt = false
+
+[functions.sla-monitor]
+verify_jwt = false
+
+[functions.send-notification-email]
+verify_jwt = false
+
+[functions.submit-complaint-widget]
+verify_jwt = false
