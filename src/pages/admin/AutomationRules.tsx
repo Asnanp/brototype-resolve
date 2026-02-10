@@ -240,7 +240,7 @@ export default function AutomationRules() {
                   value={newRule.category_id}
                   onValueChange={(value) => setNewRule({ ...newRule, category_id: value })}
                 >
-                  <SelectTrigger className="glass-input">
+                  <SelectTrigger className="glass border-border/50">
                     <SelectValue placeholder="Any category" />
                   </SelectTrigger>
                   <SelectContent>
