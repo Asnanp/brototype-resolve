@@ -537,7 +537,7 @@ export default function Analytics() {
         </div>
 
         {/* Priority Distribution */}
-        <Card className="glass-effect border-primary/20">
+        <Card className="glass-strong border-border/50">
           <CardHeader>
             <CardTitle>Priority Distribution</CardTitle>
             <CardDescription>Complaints by priority level</CardDescription>
