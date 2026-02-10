@@ -314,7 +314,7 @@ export default function AutomationRules() {
                 />
                 <Label>Active</Label>
               </div>
-              <Button onClick={handleCreateRule} disabled={saving} className="premium-button">
+              <Button onClick={handleCreateRule} disabled={saving} className="bg-gradient-to-r from-primary to-primary-glow hover:opacity-90">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
                 Create Rule
               </Button>
