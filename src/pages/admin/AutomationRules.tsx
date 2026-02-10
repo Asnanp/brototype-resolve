@@ -200,7 +200,7 @@ export default function AutomationRules() {
           </p>
         </div>
 
-        <Card className="glass-effect border-primary/20">
+        <Card className="glass-strong border-border/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Plus className="h-5 w-5" />
