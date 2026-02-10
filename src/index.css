@@ -6,37 +6,23 @@
 
 /* BROTOTYPE COMPLAINT MANAGEMENT - LIQUID GLASSMORPHISM DESIGN SYSTEM */
 
-@layer base {
   :root {
-    /* Deep dark background theme */
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-
-    /* Glass morphic card surfaces */
-    --card: 240 8% 12%;
-    --card-foreground: 0 0% 98%;
-
-    --popover: 240 8% 12%;
-    --popover-foreground: 0 0% 98%;
-
-    /* Purple-Pink gradient primary */
+    /* Light mode */
+    --background: 0 0% 98%;
+    --foreground: 240 10% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 10%;
     --primary: 271 81% 56%;
     --primary-foreground: 0 0% 98%;
     --primary-glow: 330 81% 60%;
-
-    /* Secondary glass surfaces */
-    --secondary: 240 6% 18%;
-    --secondary-foreground: 0 0% 98%;
-
-    /* Muted glass elements */
-    --muted: 240 5% 15%;
-    --muted-foreground: 240 5% 64.9%;
-
-    /* Accent highlights */
+    --secondary: 240 5% 92%;
+    --secondary-foreground: 240 10% 10%;
+    --muted: 240 5% 92%;
+    --muted-foreground: 240 5% 40%;
     --accent: 271 81% 56%;
     --accent-foreground: 0 0% 98%;
-
-    /* Status colors */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --success: 142 76% 36%;
@@ -45,16 +31,57 @@
     --warning-foreground: 0 0% 98%;
     --info: 199 89% 48%;
     --info-foreground: 0 0% 98%;
+    --border: 240 6% 85%;
+    --input: 240 6% 85%;
+    --ring: 271 81% 56%;
+    --radius: 1rem;
+    --sidebar-background: 0 0% 97%;
+    --sidebar-foreground: 240 10% 10%;
+    --sidebar-primary: 271 81% 56%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 5% 92%;
+    --sidebar-accent-foreground: 240 10% 10%;
+    --sidebar-border: 240 6% 85%;
+    --sidebar-ring: 271 81% 56%;
+    --gradient-primary: linear-gradient(135deg, hsl(271 81% 56%) 0%, hsl(330 81% 60%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(240 5% 96%) 100%);
+    --gradient-glow: radial-gradient(circle at 50% 50%, hsl(271 81% 56% / 0.1) 0%, transparent 70%);
+    --shadow-glass: 0 8px 32px 0 hsl(240 10% 80% / 0.2);
+    --shadow-glow: 0 0 60px hsl(271 81% 56% / 0.15);
+    --shadow-elegant: 0 20px 60px -15px hsl(240 10% 80% / 0.3);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
 
-    /* Borders and inputs */
+  .dark {
+    /* Deep dark background theme */
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 8% 12%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 8% 12%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 271 81% 56%;
+    --primary-foreground: 0 0% 98%;
+    --primary-glow: 330 81% 60%;
+    --secondary: 240 6% 18%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 5% 15%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 271 81% 56%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 98%;
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 98%;
     --border: 240 6% 20%;
     --input: 240 6% 20%;
     --ring: 271 81% 56%;
-
-    /* Border radius */
     --radius: 1rem;
-
-    /* Sidebar */
     --sidebar-background: 240 10% 6%;
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 271 81% 56%;
@@ -63,22 +90,15 @@
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 240 6% 20%;
     --sidebar-ring: 271 81% 56%;
-
-    /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(271 81% 56%) 0%, hsl(330 81% 60%) 100%);
     --gradient-secondary: linear-gradient(135deg, hsl(240 8% 12%) 0%, hsl(240 6% 18%) 100%);
     --gradient-glow: radial-gradient(circle at 50% 50%, hsl(271 81% 56% / 0.2) 0%, transparent 70%);
-    
-    /* Shadows and glows */
     --shadow-glass: 0 8px 32px 0 hsl(240 10% 3.9% / 0.37);
     --shadow-glow: 0 0 60px hsl(271 81% 56% / 0.3);
     --shadow-elegant: 0 20px 60px -15px hsl(240 10% 3.9% / 0.5);
-    
-    /* Transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
-}
 
 @layer base {
   * {
