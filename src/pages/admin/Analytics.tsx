@@ -465,7 +465,7 @@ export default function Analytics() {
         </div>
 
         {/* SLA Performance */}
-        <Card className="glass-effect border-primary/20">
+        <Card className="glass-strong border-border/50">
           <CardHeader>
             <CardTitle>SLA Performance by Month</CardTitle>
             <CardDescription>SLA compliance tracking over time</CardDescription>
