@@ -160,6 +160,9 @@ export default function NewComplaint() {
                   required
                   disabled={loading}
                 />
+                {formData.title.length >= 5 && (
+                  <DuplicateDetector title={formData.title} userId={user?.id} />
+                )}
               </div>
 
               {/* Category */}
