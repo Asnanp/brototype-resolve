@@ -19,7 +19,12 @@ import {
   AreaChart,
   Area,
 } from "recharts";
-import { Loader2, TrendingUp, Clock, CheckCircle2, AlertCircle, BarChart3 } from "lucide-react";
+import { Loader2, TrendingUp, Clock, CheckCircle2, AlertCircle, BarChart3, CalendarIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format, subDays, subMonths, startOfMonth, endOfMonth } from "date-fns";
 
 interface AnalyticsData {
   totalComplaints: number;
