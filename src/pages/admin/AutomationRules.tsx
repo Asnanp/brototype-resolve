@@ -218,7 +218,7 @@ export default function AutomationRules() {
                   value={newRule.name}
                   onChange={(e) => setNewRule({ ...newRule, name: e.target.value })}
                   placeholder="e.g., High Priority Technical Issues"
-                  className="glass-input"
+                  className="glass border-border/50"
                 />
               </div>
               <div className="space-y-2">
