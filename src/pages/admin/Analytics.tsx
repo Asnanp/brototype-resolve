@@ -87,10 +87,7 @@ export default function Analytics() {
 
   useEffect(() => {
     fetchAnalytics();
-    
-    // Set up real-time subscription
-    const channel = supabase
-      .channel('analytics-updates')
+  }, [dateFrom, dateTo]);
       .on('postgres_changes', { event: '*', schema: 'public', table: 'complaints' }, () => {
         fetchAnalytics();
       })
