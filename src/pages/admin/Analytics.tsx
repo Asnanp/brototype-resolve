@@ -311,12 +311,56 @@ export default function Analytics() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold gradient-text flex items-center gap-2">
-            <BarChart3 className="h-8 w-8" />
-            Analytics Dashboard
-          </h1>
-          <p className="text-muted-foreground">Real-time insights and performance metrics</p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold gradient-text flex items-center gap-2">
+              <BarChart3 className="h-8 w-8" />
+              Analytics Dashboard
+            </h1>
+            <p className="text-muted-foreground">
+              {dateFrom && dateTo
+                ? `${format(dateFrom, "MMM dd, yyyy")} — ${format(dateTo, "MMM dd, yyyy")}`
+                : "All-time insights and performance metrics"}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 items-center">
+            <Select value={dateRange} onValueChange={applyPreset}>
+              <SelectTrigger className="w-[150px] glass border-border/50">
+                <CalendarIcon className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Date range" />
+              </SelectTrigger>
+              <SelectContent className="glass-strong border-border/50">
+                <SelectItem value="all">All Time</SelectItem>
+                <SelectItem value="7d">Last 7 Days</SelectItem>
+                <SelectItem value="30d">Last 30 Days</SelectItem>
+                <SelectItem value="90d">Last 90 Days</SelectItem>
+                <SelectItem value="this_month">This Month</SelectItem>
+                <SelectItem value="last_month">Last Month</SelectItem>
+                <SelectItem value="custom">Custom</SelectItem>
+              </SelectContent>
+            </Select>
+            {dateRange === "custom" && (
+              <>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="glass border-border/50">
+                      {dateFrom ? format(dateFrom, "MMM dd") : "From"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 glass-strong"><Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} /></PopoverContent>
+                </Popover>
+                <span className="text-muted-foreground">—</span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="glass border-border/50">
+                      {dateTo ? format(dateTo, "MMM dd") : "To"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 glass-strong"><Calendar mode="single" selected={dateTo} onSelect={setDateTo} /></PopoverContent>
+                </Popover>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Key Metrics */}
