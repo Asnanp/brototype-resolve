@@ -228,7 +228,7 @@ export default function AutomationRules() {
                   value={newRule.priority}
                   onChange={(e) => setNewRule({ ...newRule, priority: parseInt(e.target.value) || 0 })}
                   placeholder="Higher = evaluated first"
-                  className="glass-input"
+                  className="glass border-border/50"
                 />
               </div>
             </div>
