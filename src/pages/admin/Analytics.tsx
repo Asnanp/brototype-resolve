@@ -61,6 +61,29 @@ const priorityColors: Record<string, string> = {
 export default function Analytics() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState("all");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
+
+  const applyPreset = (preset: string) => {
+    setDateRange(preset);
+    const now = new Date();
+    switch (preset) {
+      case "7d":
+        setDateFrom(subDays(now, 7)); setDateTo(now); break;
+      case "30d":
+        setDateFrom(subDays(now, 30)); setDateTo(now); break;
+      case "90d":
+        setDateFrom(subDays(now, 90)); setDateTo(now); break;
+      case "this_month":
+        setDateFrom(startOfMonth(now)); setDateTo(endOfMonth(now)); break;
+      case "last_month":
+        const last = subMonths(now, 1);
+        setDateFrom(startOfMonth(last)); setDateTo(endOfMonth(last)); break;
+      default:
+        setDateFrom(undefined); setDateTo(undefined);
+    }
+  };
 
   useEffect(() => {
     fetchAnalytics();
