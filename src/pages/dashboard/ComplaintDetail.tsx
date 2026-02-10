@@ -5,6 +5,7 @@ import { DashboardLayout } from "@/components/layouts/DashboardLayout";
 import { FileUpload } from "@/components/FileUpload";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { SmartReplyButton } from "@/components/SmartReplyButton";
+import { ActivityTimeline } from "@/components/admin/ActivityTimeline";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
