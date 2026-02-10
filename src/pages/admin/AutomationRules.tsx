@@ -299,7 +299,7 @@ export default function AutomationRules() {
                 value={newRule.keywords}
                 onChange={(e) => setNewRule({ ...newRule, keywords: e.target.value })}
                 placeholder="e.g., urgent, bug, crash"
-                className="glass-input"
+                className="glass border-border/50"
               />
               <p className="text-xs text-muted-foreground">
                 Complaint will be assigned if title or description contains any of these keywords
