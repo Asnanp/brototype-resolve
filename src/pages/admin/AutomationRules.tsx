@@ -260,7 +260,7 @@ export default function AutomationRules() {
                   value={newRule.priority_level}
                   onValueChange={(value) => setNewRule({ ...newRule, priority_level: value })}
                 >
-                  <SelectTrigger className="glass-input">
+                   <SelectTrigger className="glass border-border/50">
                     <SelectValue placeholder="Any priority" />
                   </SelectTrigger>
                   <SelectContent>
