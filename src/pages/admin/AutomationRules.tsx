@@ -279,7 +279,7 @@ export default function AutomationRules() {
                   value={newRule.assigned_to}
                   onValueChange={(value) => setNewRule({ ...newRule, assigned_to: value })}
                 >
-                  <SelectTrigger className="glass-input">
+                  <SelectTrigger className="glass border-border/50">
                     <SelectValue placeholder="Select admin" />
                   </SelectTrigger>
                   <SelectContent>
