@@ -475,6 +475,19 @@ export default function ComplaintDetail() {
           </CardContent>
         </Card>
 
+        {/* Activity Timeline */}
+        <Card className="glass-strong border-border/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-primary" />
+              Activity Timeline
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ActivityTimeline complaintId={id!} />
+          </CardContent>
+        </Card>
+
         {/* Comments Section */}
         <Card className="glass-strong border-border/50">
           <CardHeader>
