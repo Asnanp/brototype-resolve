@@ -102,12 +102,21 @@ export default function Analytics() {
 
   const fetchAnalytics = async () => {
     try {
-      const { data: complaints, error } = await supabase
+      let query = supabase
         .from("complaints")
         .select(`
           *,
           categories (name)
         `);
+
+      if (dateFrom) query = query.gte("created_at", dateFrom.toISOString());
+      if (dateTo) {
+        const end = new Date(dateTo);
+        end.setHours(23, 59, 59, 999);
+        query = query.lte("created_at", end.toISOString());
+      }
+
+      const { data: complaints, error } = await query;
 
       if (error) throw error;
 
