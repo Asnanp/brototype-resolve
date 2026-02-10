@@ -129,11 +129,19 @@
     border: 1px solid hsl(var(--border) / 0.3);
   }
 
+  .dark .glass {
+    background: hsl(var(--card) / 0.4);
+  }
+
   .glass-strong {
-    background: hsl(var(--card) / 0.6);
+    background: hsl(var(--card) / 0.8);
     backdrop-filter: blur(30px);
     -webkit-backdrop-filter: blur(30px);
     border: 1px solid hsl(var(--border) / 0.5);
+  }
+
+  .dark .glass-strong {
+    background: hsl(var(--card) / 0.6);
   }
 
   /* Gradient text */
