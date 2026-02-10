@@ -425,7 +425,7 @@ export default function Analytics() {
 
         {/* Charts Row 1 */}
         <div className="grid gap-4 md:grid-cols-2">
-          <Card className="glass-effect border-primary/20">
+          <Card className="glass-strong border-border/50">
             <CardHeader>
               <CardTitle>Weekly Trend</CardTitle>
               <CardDescription>Complaints created vs resolved</CardDescription>
