@@ -332,7 +332,7 @@ export default function AutomationRules() {
             </Card>
           ) : (
             rules.map((rule) => (
-              <Card key={rule.id} className="glass-effect border-primary/20">
+              <Card key={rule.id} className="glass-strong border-border/50">
                 <CardContent className="py-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 space-y-2">
