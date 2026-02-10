@@ -506,7 +506,7 @@ export default function Analytics() {
             </CardContent>
           </Card>
 
-          <Card className="glass-effect border-primary/20">
+          <Card className="glass-strong border-border/50">
             <CardHeader>
               <CardTitle>Status Distribution</CardTitle>
               <CardDescription>Current complaint statuses</CardDescription>
