@@ -488,7 +488,7 @@ export default function Analytics() {
 
         {/* Distribution Charts */}
         <div className="grid gap-4 md:grid-cols-2">
-          <Card className="glass-effect border-primary/20">
+          <Card className="glass-strong border-border/50">
             <CardHeader>
               <CardTitle>Complaints by Category</CardTitle>
               <CardDescription>Distribution across categories</CardDescription>
