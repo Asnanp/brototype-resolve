@@ -325,7 +325,7 @@ export default function AutomationRules() {
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Existing Rules</h2>
           {rules.length === 0 ? (
-            <Card className="glass-effect border-primary/20">
+            <Card className="glass-strong border-border/50">
               <CardContent className="py-8 text-center text-muted-foreground">
                 No automation rules created yet
               </CardContent>
