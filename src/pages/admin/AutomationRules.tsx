@@ -200,7 +200,7 @@ export default function AutomationRules() {
           </p>
         </div>
 
-        <Card className="glass-effect border-primary/20">
+        <Card className="glass-strong border-border/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Plus className="h-5 w-5" />
@@ -218,7 +218,7 @@ export default function AutomationRules() {
                   value={newRule.name}
                   onChange={(e) => setNewRule({ ...newRule, name: e.target.value })}
                   placeholder="e.g., High Priority Technical Issues"
-                  className="glass-input"
+                  className="glass border-border/50"
                 />
               </div>
               <div className="space-y-2">
@@ -228,7 +228,7 @@ export default function AutomationRules() {
                   value={newRule.priority}
                   onChange={(e) => setNewRule({ ...newRule, priority: parseInt(e.target.value) || 0 })}
                   placeholder="Higher = evaluated first"
-                  className="glass-input"
+                  className="glass border-border/50"
                 />
               </div>
             </div>
@@ -240,7 +240,7 @@ export default function AutomationRules() {
                   value={newRule.category_id}
                   onValueChange={(value) => setNewRule({ ...newRule, category_id: value })}
                 >
-                  <SelectTrigger className="glass-input">
+                  <SelectTrigger className="glass border-border/50">
                     <SelectValue placeholder="Any category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -260,7 +260,7 @@ export default function AutomationRules() {
                   value={newRule.priority_level}
                   onValueChange={(value) => setNewRule({ ...newRule, priority_level: value })}
                 >
-                  <SelectTrigger className="glass-input">
+                   <SelectTrigger className="glass border-border/50">
                     <SelectValue placeholder="Any priority" />
                   </SelectTrigger>
                   <SelectContent>
@@ -279,7 +279,7 @@ export default function AutomationRules() {
                   value={newRule.assigned_to}
                   onValueChange={(value) => setNewRule({ ...newRule, assigned_to: value })}
                 >
-                  <SelectTrigger className="glass-input">
+                  <SelectTrigger className="glass border-border/50">
                     <SelectValue placeholder="Select admin" />
                   </SelectTrigger>
                   <SelectContent>
@@ -299,7 +299,7 @@ export default function AutomationRules() {
                 value={newRule.keywords}
                 onChange={(e) => setNewRule({ ...newRule, keywords: e.target.value })}
                 placeholder="e.g., urgent, bug, crash"
-                className="glass-input"
+                className="glass border-border/50"
               />
               <p className="text-xs text-muted-foreground">
                 Complaint will be assigned if title or description contains any of these keywords
@@ -314,7 +314,7 @@ export default function AutomationRules() {
                 />
                 <Label>Active</Label>
               </div>
-              <Button onClick={handleCreateRule} disabled={saving} className="premium-button">
+              <Button onClick={handleCreateRule} disabled={saving} className="bg-gradient-to-r from-primary to-primary-glow hover:opacity-90">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
                 Create Rule
               </Button>
@@ -325,14 +325,14 @@ export default function AutomationRules() {
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Existing Rules</h2>
           {rules.length === 0 ? (
-            <Card className="glass-effect border-primary/20">
+            <Card className="glass-strong border-border/50">
               <CardContent className="py-8 text-center text-muted-foreground">
                 No automation rules created yet
               </CardContent>
             </Card>
           ) : (
             rules.map((rule) => (
-              <Card key={rule.id} className="glass-effect border-primary/20">
+              <Card key={rule.id} className="glass-strong border-border/50">
                 <CardContent className="py-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 space-y-2">

@@ -1,5 +1,6 @@
 import { ReactNode, useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { Button } from "@/components/ui/button";
@@ -115,13 +116,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="p-6 border-b border-border/50">
+          <div className="p-6 border-b border-border/50 flex items-center justify-between">
             <Link to="/" className="flex items-center space-x-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center">
                 <Shield className="w-6 h-6 text-primary-foreground" />
               </div>
               <span className="text-xl font-bold gradient-text">Brototype</span>
             </Link>
+            <ThemeToggle />
           </div>
 
           {/* Navigation */}

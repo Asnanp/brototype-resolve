@@ -5,6 +5,7 @@ import { DashboardLayout } from "@/components/layouts/DashboardLayout";
 import { FileUpload } from "@/components/FileUpload";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { SmartReplyButton } from "@/components/SmartReplyButton";
+import { ActivityTimeline } from "@/components/admin/ActivityTimeline";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -471,6 +472,19 @@ export default function ComplaintDetail() {
                 ))}
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Activity Timeline */}
+        <Card className="glass-strong border-border/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-primary" />
+              Activity Timeline
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ActivityTimeline complaintId={id!} />
           </CardContent>
         </Card>
 

@@ -19,7 +19,12 @@ import {
   AreaChart,
   Area,
 } from "recharts";
-import { Loader2, TrendingUp, Clock, CheckCircle2, AlertCircle, BarChart3 } from "lucide-react";
+import { Loader2, TrendingUp, Clock, CheckCircle2, AlertCircle, BarChart3, CalendarIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format, subDays, subMonths, startOfMonth, endOfMonth } from "date-fns";
 
 interface AnalyticsData {
   totalComplaints: number;
@@ -56,11 +61,33 @@ const priorityColors: Record<string, string> = {
 export default function Analytics() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState("all");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
+
+  const applyPreset = (preset: string) => {
+    setDateRange(preset);
+    const now = new Date();
+    switch (preset) {
+      case "7d":
+        setDateFrom(subDays(now, 7)); setDateTo(now); break;
+      case "30d":
+        setDateFrom(subDays(now, 30)); setDateTo(now); break;
+      case "90d":
+        setDateFrom(subDays(now, 90)); setDateTo(now); break;
+      case "this_month":
+        setDateFrom(startOfMonth(now)); setDateTo(endOfMonth(now)); break;
+      case "last_month":
+        const last = subMonths(now, 1);
+        setDateFrom(startOfMonth(last)); setDateTo(endOfMonth(last)); break;
+      default:
+        setDateFrom(undefined); setDateTo(undefined);
+    }
+  };
 
   useEffect(() => {
     fetchAnalytics();
-    
-    // Set up real-time subscription
+
     const channel = supabase
       .channel('analytics-updates')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'complaints' }, () => {
@@ -71,16 +98,25 @@ export default function Analytics() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [dateFrom, dateTo]);
 
   const fetchAnalytics = async () => {
     try {
-      const { data: complaints, error } = await supabase
+      let query = supabase
         .from("complaints")
         .select(`
           *,
           categories (name)
         `);
+
+      if (dateFrom) query = query.gte("created_at", dateFrom.toISOString());
+      if (dateTo) {
+        const end = new Date(dateTo);
+        end.setHours(23, 59, 59, 999);
+        query = query.lte("created_at", end.toISOString());
+      }
+
+      const { data: complaints, error } = await query;
 
       if (error) throw error;
 
@@ -275,17 +311,61 @@ export default function Analytics() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold gradient-text flex items-center gap-2">
-            <BarChart3 className="h-8 w-8" />
-            Analytics Dashboard
-          </h1>
-          <p className="text-muted-foreground">Real-time insights and performance metrics</p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold gradient-text flex items-center gap-2">
+              <BarChart3 className="h-8 w-8" />
+              Analytics Dashboard
+            </h1>
+            <p className="text-muted-foreground">
+              {dateFrom && dateTo
+                ? `${format(dateFrom, "MMM dd, yyyy")} — ${format(dateTo, "MMM dd, yyyy")}`
+                : "All-time insights and performance metrics"}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 items-center">
+            <Select value={dateRange} onValueChange={applyPreset}>
+              <SelectTrigger className="w-[150px] glass border-border/50">
+                <CalendarIcon className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Date range" />
+              </SelectTrigger>
+              <SelectContent className="glass-strong border-border/50">
+                <SelectItem value="all">All Time</SelectItem>
+                <SelectItem value="7d">Last 7 Days</SelectItem>
+                <SelectItem value="30d">Last 30 Days</SelectItem>
+                <SelectItem value="90d">Last 90 Days</SelectItem>
+                <SelectItem value="this_month">This Month</SelectItem>
+                <SelectItem value="last_month">Last Month</SelectItem>
+                <SelectItem value="custom">Custom</SelectItem>
+              </SelectContent>
+            </Select>
+            {dateRange === "custom" && (
+              <>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="glass border-border/50">
+                      {dateFrom ? format(dateFrom, "MMM dd") : "From"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 glass-strong"><Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} /></PopoverContent>
+                </Popover>
+                <span className="text-muted-foreground">—</span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="glass border-border/50">
+                      {dateTo ? format(dateTo, "MMM dd") : "To"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 glass-strong"><Calendar mode="single" selected={dateTo} onSelect={setDateTo} /></PopoverContent>
+                </Popover>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Key Metrics */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-          <Card className="glass-effect border-primary/20">
+          <Card className="glass-strong border-border/50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Complaints</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -296,7 +376,7 @@ export default function Analytics() {
             </CardContent>
           </Card>
 
-          <Card className="glass-effect border-primary/20">
+          <Card className="glass-strong border-border/50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Resolution Rate</CardTitle>
               <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
@@ -309,7 +389,7 @@ export default function Analytics() {
             </CardContent>
           </Card>
 
-          <Card className="glass-effect border-primary/20">
+          <Card className="glass-strong border-border/50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Avg Response Time</CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
@@ -320,7 +400,7 @@ export default function Analytics() {
             </CardContent>
           </Card>
 
-          <Card className="glass-effect border-primary/20">
+          <Card className="glass-strong border-border/50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Avg Resolution Time</CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
@@ -331,7 +411,7 @@ export default function Analytics() {
             </CardContent>
           </Card>
 
-          <Card className="glass-effect border-primary/20">
+          <Card className="glass-strong border-border/50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">SLA Compliance</CardTitle>
               <AlertCircle className="h-4 w-4 text-muted-foreground" />
@@ -345,7 +425,7 @@ export default function Analytics() {
 
         {/* Charts Row 1 */}
         <div className="grid gap-4 md:grid-cols-2">
-          <Card className="glass-effect border-primary/20">
+          <Card className="glass-strong border-border/50">
             <CardHeader>
               <CardTitle>Weekly Trend</CardTitle>
               <CardDescription>Complaints created vs resolved</CardDescription>
@@ -365,7 +445,7 @@ export default function Analytics() {
             </CardContent>
           </Card>
 
-          <Card className="glass-effect border-primary/20">
+          <Card className="glass-strong border-border/50">
             <CardHeader>
               <CardTitle>Response Time Trend</CardTitle>
               <CardDescription>Average first response time (hours)</CardDescription>
@@ -385,7 +465,7 @@ export default function Analytics() {
         </div>
 
         {/* SLA Performance */}
-        <Card className="glass-effect border-primary/20">
+        <Card className="glass-strong border-border/50">
           <CardHeader>
             <CardTitle>SLA Performance by Month</CardTitle>
             <CardDescription>SLA compliance tracking over time</CardDescription>
@@ -408,7 +488,7 @@ export default function Analytics() {
 
         {/* Distribution Charts */}
         <div className="grid gap-4 md:grid-cols-2">
-          <Card className="glass-effect border-primary/20">
+          <Card className="glass-strong border-border/50">
             <CardHeader>
               <CardTitle>Complaints by Category</CardTitle>
               <CardDescription>Distribution across categories</CardDescription>
@@ -426,7 +506,7 @@ export default function Analytics() {
             </CardContent>
           </Card>
 
-          <Card className="glass-effect border-primary/20">
+          <Card className="glass-strong border-border/50">
             <CardHeader>
               <CardTitle>Status Distribution</CardTitle>
               <CardDescription>Current complaint statuses</CardDescription>
@@ -457,7 +537,7 @@ export default function Analytics() {
         </div>
 
         {/* Priority Distribution */}
-        <Card className="glass-effect border-primary/20">
+        <Card className="glass-strong border-border/50">
           <CardHeader>
             <CardTitle>Priority Distribution</CardTitle>
             <CardDescription>Complaints by priority level</CardDescription>
