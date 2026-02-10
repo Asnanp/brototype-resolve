@@ -87,7 +87,9 @@ export default function Analytics() {
 
   useEffect(() => {
     fetchAnalytics();
-  }, [dateFrom, dateTo]);
+
+    const channel = supabase
+      .channel('analytics-updates')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'complaints' }, () => {
         fetchAnalytics();
       })
@@ -96,7 +98,7 @@ export default function Analytics() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [dateFrom, dateTo]);
 
   const fetchAnalytics = async () => {
     try {
